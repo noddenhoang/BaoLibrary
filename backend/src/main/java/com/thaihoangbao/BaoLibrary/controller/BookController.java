@@ -1,0 +1,87 @@
+package com.thaihoangbao.BaoLibrary.controller;
+
+import com.thaihoangbao.BaoLibrary.dto.BookDto;
+import com.thaihoangbao.BaoLibrary.dto.BookResponseDto;
+import com.thaihoangbao.BaoLibrary.dto.PagedResponse;
+import com.thaihoangbao.BaoLibrary.service.BookService;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/books")
+public class BookController {
+    
+    @Autowired
+    private BookService bookService;
+    
+    // Tạo sách mới (chỉ admin hoặc manager)
+    @PostMapping
+    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_MANAGER')")
+    public ResponseEntity<BookResponseDto> createBook(@Valid @RequestBody BookDto bookDto) {
+        return new ResponseEntity<>(bookService.createBook(bookDto), HttpStatus.CREATED);
+    }
+    
+    // Lấy sách theo ID
+    @GetMapping("/{id}")
+    public ResponseEntity<BookResponseDto> getBookById(@PathVariable Integer id) {
+        return ResponseEntity.ok(bookService.getBookById(id));
+    }
+    
+    // Lấy tất cả sách với phân trang và sắp xếp
+    @GetMapping
+    public PagedResponse<BookResponseDto> getAllBooks(
+            @RequestParam(defaultValue = "0", required = false) int pageNo,
+            @RequestParam(defaultValue = "10", required = false) int pageSize,
+            @RequestParam(defaultValue = "tuaSach", required = false) String sortBy,
+            @RequestParam(defaultValue = "asc", required = false) String sortDir) {
+        return bookService.getAllBooks(pageNo, pageSize, sortBy, sortDir);
+    }
+    
+    // Tìm kiếm sách theo từ khóa
+    @GetMapping("/search")
+    public PagedResponse<BookResponseDto> searchBooks(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "0", required = false) int pageNo,
+            @RequestParam(defaultValue = "10", required = false) int pageSize) {
+        return bookService.searchBooks(keyword, pageNo, pageSize);
+    }
+    
+    // Lấy sách theo danh mục
+    @GetMapping("/category/{categoryId}")
+    public PagedResponse<BookResponseDto> getBooksByCategory(
+            @PathVariable Integer categoryId,
+            @RequestParam(defaultValue = "0", required = false) int pageNo,
+            @RequestParam(defaultValue = "10", required = false) int pageSize) {
+        return bookService.getBooksByCategory(categoryId, pageNo, pageSize);
+    }
+    
+    // Lấy sách theo tác giả
+    @GetMapping("/author/{authorId}")
+    public PagedResponse<BookResponseDto> getBooksByAuthor(
+            @PathVariable Integer authorId,
+            @RequestParam(defaultValue = "0", required = false) int pageNo,
+            @RequestParam(defaultValue = "10", required = false) int pageSize) {
+        return bookService.getBooksByAuthor(authorId, pageNo, pageSize);
+    }
+    
+    // Cập nhật sách (chỉ admin hoặc manager)
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_MANAGER')")
+    public ResponseEntity<BookResponseDto> updateBook(
+            @PathVariable Integer id, 
+            @Valid @RequestBody BookDto bookDto) {
+        return ResponseEntity.ok(bookService.updateBook(id, bookDto));
+    }
+    
+    // Xóa sách (chỉ admin)
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<Void> deleteBook(@PathVariable Integer id) {
+        bookService.deleteBook(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+}

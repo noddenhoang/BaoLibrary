@@ -1,0 +1,48 @@
+package com.thaihoangbao.BaoLibrary.entity;
+
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import java.util.HashSet;
+import java.util.Set;
+
+@Entity
+@Table(name = "BOOK")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Book {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "BookID")
+    private Integer bookId;
+    
+    @Column(name = "TuaSach", nullable = false)
+    private String tuaSach;
+    
+    @Column(name = "MoTa")
+    private String moTa;
+    
+    @Column(name = "NamXuatBan")
+    private Integer namXuatBan;
+    
+    @Column(name = "HinhAnhSach")
+    private String hinhAnhSach;
+    
+    @ManyToMany
+    @JoinTable(
+        name = "BOOK_AUTHOR",
+        joinColumns = @JoinColumn(name = "BookID"),
+        inverseJoinColumns = @JoinColumn(name = "AuthorID")
+    )
+    private Set<Author> authors = new HashSet<>();
+    
+    @ManyToMany
+    @JoinTable(
+        name = "BOOK_CATEGORY",
+        joinColumns = @JoinColumn(name = "BookID"),
+        inverseJoinColumns = @JoinColumn(name = "CategoryID")
+    )
+    private Set<Category> categories = new HashSet<>();
+}
