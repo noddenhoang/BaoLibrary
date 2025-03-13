@@ -8,14 +8,14 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "BORROWING")
+@Table(name = "LOAN") // Changed from "BORROWING" to "LOAN" to match the database schema
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class Borrowing {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "BorrowID")
+    @Column(name = "LoanID") // Changed from "BorrowID" to "LoanID"
     private Integer borrowId;
     
     @ManyToOne
@@ -23,21 +23,13 @@ public class Borrowing {
     private User user;
     
     @ManyToOne
-    @JoinColumn(name = "BookID", nullable = false)
-    private Book book;
+    @JoinColumn(name = "BranchID", nullable = false) // Added BranchID as per schema
+    private Branch branch; // Need to create Branch entity
     
-    @Column(name = "BorrowDate", nullable = false)
+    @Column(name = "NgayMuon", nullable = false) // Changed from "BorrowDate" to "NgayMuon"
     @Temporal(TemporalType.DATE)
     private Date borrowDate;
     
-    @Column(name = "DueDate", nullable = false)
-    @Temporal(TemporalType.DATE)
-    private Date dueDate;
-    
-    @Column(name = "ReturnDate")
-    @Temporal(TemporalType.DATE)
-    private Date returnDate;
-    
-    @Column(name = "Status")
-    private String status; // BORROWED, RETURNED, OVERDUE
+    // Removed DueDate and ReturnDate as they're in LOANDETAIL table
+    // Removed Status as it's not in LOAN table
 }

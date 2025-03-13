@@ -10,8 +10,8 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.security.access.AccessDeniedException;
-import javax.validation.ConstraintViolation;
-import javax.validation.ConstraintViolationException;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

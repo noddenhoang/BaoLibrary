@@ -39,7 +39,12 @@ public class SecurityConfig {
                 .cors().and()
                 .csrf().disable()
                 .authorizeHttpRequests((authorize) -> authorize
+                        // Các đường dẫn công khai
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/books/**").permitAll() // Allow public access to books API
+                        .requestMatchers("/api/authors/**").permitAll() // Allow public access to authors API
+                        .requestMatchers("/api/categories/**").permitAll() // Allow public access to categories API
+                        // Phải xác thực cho các đường dẫn còn lại
                         .anyRequest().authenticated()
                 )
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
