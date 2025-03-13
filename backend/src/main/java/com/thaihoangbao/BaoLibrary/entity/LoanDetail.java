@@ -2,6 +2,7 @@ package com.thaihoangbao.BaoLibrary.entity;
 
 import java.util.Date;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -9,6 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
@@ -17,31 +19,32 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "INCIDENTREPORT")
+@Table(name = "LOANDETAIL")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Incident {
+public class LoanDetail {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ReportID")
-    private Integer reportId;
+    @Column(name = "LoanDetailID")
+    private Integer loanDetailId;
     
     @ManyToOne
-    @JoinColumn(name = "UserID")
-    private User user;
+    @JoinColumn(name = "LoanID", nullable = false)
+    private Borrowing loan;
     
     @ManyToOne
-    @JoinColumn(name = "BranchID")
-    private Branch branch;
+    @JoinColumn(name = "BookID", nullable = false)
+    private Book book;
     
-    @Column(name = "NgayBaoCao")
+    @Column(name = "NgayDenHan")
     @Temporal(TemporalType.DATE)
-    private Date reportDate;
+    private Date dueDate;
     
-    @Column(name = "NoiDung")
-    private String content;
+    @Column(name = "NgayTra")
+    @Temporal(TemporalType.DATE)
+    private Date returnDate;
     
-    @Column(name = "TrangThai")
-    private String status; // "pending", "in_progress", "resolved", "rejected"
-}
+    @OneToOne(mappedBy = "loanDetail", cascade = CascadeType.ALL)
+    private Return returnRecord;
+} 

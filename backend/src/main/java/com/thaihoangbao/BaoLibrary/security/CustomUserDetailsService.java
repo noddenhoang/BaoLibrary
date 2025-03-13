@@ -1,15 +1,13 @@
 package com.thaihoangbao.BaoLibrary.security;
 
-import com.thaihoangbao.BaoLibrary.entity.User;
-import com.thaihoangbao.BaoLibrary.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
+import com.thaihoangbao.BaoLibrary.entity.User;
+import com.thaihoangbao.BaoLibrary.repository.UserRepository;
 
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
@@ -22,10 +20,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         User user = userRepository.findByTaiKhoan(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy tài khoản: " + username));
         
-        return new org.springframework.security.core.userdetails.User(
-                user.getTaiKhoan(),
-                user.getMatKhau(),
-                Collections.singleton(new SimpleGrantedAuthority("ROLE_" + user.getRole().name().toUpperCase()))
-        );
+        // Trả về CustomUserDetails để có thêm thông tin về User
+        return new CustomUserDetails(user);
     }
 }
