@@ -1,0 +1,169 @@
+-- Tạo cơ sở dữ liệu nếu chưa tồn tại
+CREATE DATABASE IF NOT EXISTS library_management;
+USE library_management;
+
+-- Tạo bảng USER
+CREATE TABLE USER (
+    UserID INT AUTO_INCREMENT PRIMARY KEY,
+    HoTen VARCHAR(100) NOT NULL,
+    DiaChi VARCHAR(255),
+    Email VARCHAR(100) UNIQUE,
+    SoDienThoai VARCHAR(20),
+    TaiKhoan VARCHAR(50) UNIQUE NOT NULL,
+    MatKhau VARCHAR(255) NOT NULL,
+    Role ENUM('member', 'manager', 'admin') DEFAULT 'member',
+    TrangThai VARCHAR(50) DEFAULT 'active',
+    NgayDangKy DATE DEFAULT (CURRENT_DATE)
+);
+
+-- Tạo bảng BOOK
+CREATE TABLE BOOK (
+    BookID INT AUTO_INCREMENT PRIMARY KEY,
+    TuaSach VARCHAR(255) NOT NULL,
+    MoTa TEXT,
+    NamXuatBan INT,
+    HinhAnhSach VARCHAR(255)
+);
+
+-- Tạo bảng AUTHOR
+CREATE TABLE AUTHOR (
+    AuthorID INT AUTO_INCREMENT PRIMARY KEY,
+    TenTacGia VARCHAR(100) NOT NULL
+);
+
+-- Tạo bảng BOOK_AUTHOR (quan hệ nhiều-nhiều)
+CREATE TABLE BOOK_AUTHOR (
+    BookID INT,
+    AuthorID INT,
+    PRIMARY KEY (BookID, AuthorID),
+    FOREIGN KEY (BookID) REFERENCES BOOK(BookID) ON DELETE CASCADE,
+    FOREIGN KEY (AuthorID) REFERENCES AUTHOR(AuthorID) ON DELETE CASCADE
+);
+
+-- Tạo bảng CATEGORY
+CREATE TABLE CATEGORY (
+    CategoryID INT AUTO_INCREMENT PRIMARY KEY,
+    CategoryName VARCHAR(100) NOT NULL,
+    Description TEXT
+);
+
+-- Tạo bảng BOOK_CATEGORY (quan hệ nhiều-nhiều)
+CREATE TABLE BOOK_CATEGORY (
+    BookID INT,
+    CategoryID INT,
+    PRIMARY KEY (BookID, CategoryID),
+    FOREIGN KEY (BookID) REFERENCES BOOK(BookID) ON DELETE CASCADE,
+    FOREIGN KEY (CategoryID) REFERENCES CATEGORY(CategoryID) ON DELETE CASCADE
+);
+
+-- Tạo bảng BRANCH
+CREATE TABLE BRANCH (
+    BranchID INT AUTO_INCREMENT PRIMARY KEY,
+    TenChiNhanh VARCHAR(100) NOT NULL,
+    DiaChi VARCHAR(255),
+    SoDienThoai VARCHAR(20),
+    ManagerID INT,
+    FOREIGN KEY (ManagerID) REFERENCES USER(UserID) ON DELETE SET NULL
+);
+
+-- Tạo bảng INVENTORY
+CREATE TABLE INVENTORY (
+    BranchID INT,
+    BookID INT,
+    TongSoBan INT DEFAULT 0,
+    SoLuongHienCo INT DEFAULT 0,
+    PRIMARY KEY (BranchID, BookID),
+    FOREIGN KEY (BranchID) REFERENCES BRANCH(BranchID) ON DELETE CASCADE,
+    FOREIGN KEY (BookID) REFERENCES BOOK(BookID) ON DELETE CASCADE
+);
+
+-- Tạo bảng RESERVATION
+CREATE TABLE RESERVATION (
+    ReservationID INT AUTO_INCREMENT PRIMARY KEY,
+    UserID INT,
+    BookID INT,
+    BranchID INT,
+    ReservationDate DATE DEFAULT (CURRENT_DATE),
+    Status ENUM('pending', 'confirmed', 'canceled', 'expired') DEFAULT 'pending',
+    FOREIGN KEY (UserID) REFERENCES USER(UserID) ON DELETE CASCADE,
+    FOREIGN KEY (BookID) REFERENCES BOOK(BookID) ON DELETE CASCADE,
+    FOREIGN KEY (BranchID) REFERENCES BRANCH(BranchID) ON DELETE CASCADE
+);
+
+-- Tạo bảng LOAN
+CREATE TABLE LOAN (
+    LoanID INT AUTO_INCREMENT PRIMARY KEY,
+    UserID INT,
+    BranchID INT,
+    NgayMuon DATE DEFAULT (CURRENT_DATE),
+    FOREIGN KEY (UserID) REFERENCES USER(UserID) ON DELETE CASCADE,
+    FOREIGN KEY (BranchID) REFERENCES BRANCH(BranchID) ON DELETE CASCADE
+);
+
+-- Tạo bảng LOANDETAIL
+CREATE TABLE LOANDETAIL (
+    LoanDetailID INT AUTO_INCREMENT PRIMARY KEY,
+    LoanID INT,
+    BookID INT,
+    NgayDenHan DATE,
+    NgayTra DATE,
+    FOREIGN KEY (LoanID) REFERENCES LOAN(LoanID) ON DELETE CASCADE,
+    FOREIGN KEY (BookID) REFERENCES BOOK(BookID) ON DELETE CASCADE
+);
+
+-- Tạo bảng VIOLATION
+CREATE TABLE VIOLATION (
+    ViolationID INT AUTO_INCREMENT PRIMARY KEY,
+    LoanDetailID INT,
+    LoaiViPham VARCHAR(100),
+    SoTienPhat DECIMAL(10, 2),
+    NgayViPham DATE DEFAULT (CURRENT_DATE),
+    TrangThai VARCHAR(50) DEFAULT 'pending',
+    FOREIGN KEY (LoanDetailID) REFERENCES LOANDETAIL(LoanDetailID) ON DELETE CASCADE
+);
+
+-- Tạo bảng INCIDENTREPORT
+CREATE TABLE INCIDENTREPORT (
+    ReportID INT AUTO_INCREMENT PRIMARY KEY,
+    UserID INT,
+    BranchID INT,
+    NgayBaoCao DATE DEFAULT (CURRENT_DATE),
+    NoiDung TEXT,
+    TrangThai VARCHAR(50) DEFAULT 'pending',
+    FOREIGN KEY (UserID) REFERENCES USER(UserID) ON DELETE CASCADE,
+    FOREIGN KEY (BranchID) REFERENCES BRANCH(BranchID) ON DELETE CASCADE
+);
+
+-- Tạo bảng NOTIFICATION
+CREATE TABLE NOTIFICATION (
+    NotificationID INT AUTO_INCREMENT PRIMARY KEY,
+    UserID INT,
+    Content TEXT,
+    Type VARCHAR(50),
+    Status ENUM('read', 'unread') DEFAULT 'unread',
+    CreatedDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (UserID) REFERENCES USER(UserID) ON DELETE CASCADE
+);
+
+-- Tạo bảng PAYMENT
+CREATE TABLE PAYMENT (
+    PaymentID INT AUTO_INCREMENT PRIMARY KEY,
+    UserID INT,
+    ViolationID INT,
+    Amount DECIMAL(10, 2),
+    PaymentMethod VARCHAR(50),
+    PaymentStatus VARCHAR(50) DEFAULT 'pending',
+    PaymentDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (UserID) REFERENCES USER(UserID) ON DELETE CASCADE,
+    FOREIGN KEY (ViolationID) REFERENCES VIOLATION(ViolationID) ON DELETE SET NULL
+);
+
+-- Tạo indexes để tối ưu truy vấn
+CREATE INDEX idx_book_tuasach ON BOOK(TuaSach);
+CREATE INDEX idx_author_tentacgia ON AUTHOR(TenTacGia);
+CREATE INDEX idx_user_hotentickhoan ON USER(HoTen, TaiKhoan);
+CREATE INDEX idx_loan_userid_branchid ON LOAN(UserID, BranchID);
+CREATE INDEX idx_loandetail_loanid ON LOANDETAIL(LoanID);
+CREATE INDEX idx_reservation_userid_bookid ON RESERVATION(UserID, BookID);
+CREATE INDEX idx_violation_loandetailid ON VIOLATION(LoanDetailID);
+CREATE INDEX idx_notification_userid ON NOTIFICATION(UserID);
