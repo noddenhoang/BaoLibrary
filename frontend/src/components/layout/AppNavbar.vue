@@ -2,7 +2,6 @@
 import { computed, ref } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
-import authService from '@/services/auth';
 
 const store = useStore();
 const router = useRouter();
@@ -28,12 +27,8 @@ const toggleMobileMenu = () => {
 
 // Handle logout
 const handleLogout = () => {
-  authService.logout();
-  router.push('/login');
-  store.dispatch('setNotification', {
-    type: 'success',
-    message: 'You have been successfully logged out.'
-  });
+  store.dispatch('auth/logout');
+  // Không cần redirect vì đã được xử lý trong action logout
 };
 </script>
 
@@ -59,7 +54,7 @@ const handleLogout = () => {
               class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
               :class="[$route.path === '/' ? 'border-primary-500 text-gray-900 dark:text-white' : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200']"
             >
-              Home
+              Trang chủ
             </router-link>
             
             <router-link 
@@ -67,7 +62,7 @@ const handleLogout = () => {
               class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
               :class="[$route.path.startsWith('/catalog') ? 'border-primary-500 text-gray-900 dark:text-white' : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200']"
             >
-              Book Catalog
+              Danh mục sách
             </router-link>
             
             <template v-if="isAuthenticated">
@@ -76,7 +71,7 @@ const handleLogout = () => {
                 class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
                 :class="[$route.path.startsWith('/user/borrowed') ? 'border-primary-500 text-gray-900 dark:text-white' : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200']"
               >
-                My Books
+                Sách của tôi
               </router-link>
             </template>
           </div>
@@ -88,7 +83,7 @@ const handleLogout = () => {
           <button 
             @click="toggleDarkMode" 
             class="p-2 rounded-full text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none"
-            aria-label="Toggle dark mode"
+            aria-label="Chế độ tối"
           >
             <span v-if="darkMode" class="material-icons">light_mode</span>
             <span v-else class="material-icons">dark_mode</span>
@@ -101,14 +96,14 @@ const handleLogout = () => {
                 to="/user/profile" 
                 class="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
               >
-                {{ user?.username || 'User' }}
+                {{ user?.username || 'Người dùng' }}
               </router-link>
               
               <button 
                 @click="handleLogout" 
                 class="btn btn-outline text-sm"
               >
-                Logout
+                Đăng xuất
               </button>
             </div>
           </div>
@@ -116,10 +111,10 @@ const handleLogout = () => {
           <!-- Login/Register buttons -->
           <div v-else class="ml-3 flex items-center space-x-2">
             <router-link to="/login" class="btn btn-outline text-sm">
-              Login
+              Đăng nhập
             </router-link>
             <router-link to="/register" class="btn btn-primary text-sm">
-              Register
+              Đăng ký
             </router-link>
           </div>
           
@@ -130,7 +125,7 @@ const handleLogout = () => {
               class="inline-flex items-center justify-center p-2 rounded-md text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none"
               aria-expanded="false"
             >
-              <span class="sr-only">Open main menu</span>
+              <span class="sr-only">Mở menu chính</span>
               <span v-if="!mobileMenuOpen" class="material-icons">menu</span>
               <span v-else class="material-icons">close</span>
             </button>
@@ -148,7 +143,7 @@ const handleLogout = () => {
           :class="[$route.path === '/' ? 'border-primary-500 text-primary-700 dark:text-primary-300 bg-primary-50 dark:bg-primary-900 bg-opacity-50' : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200']"
           @click="mobileMenuOpen = false"
         >
-          Home
+          Trang chủ
         </router-link>
         
         <router-link 
@@ -157,7 +152,7 @@ const handleLogout = () => {
           :class="[$route.path.startsWith('/catalog') ? 'border-primary-500 text-primary-700 dark:text-primary-300 bg-primary-50 dark:bg-primary-900 bg-opacity-50' : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200']"
           @click="mobileMenuOpen = false"
         >
-          Book Catalog
+          Danh mục sách
         </router-link>
         
         <template v-if="isAuthenticated">
@@ -167,7 +162,7 @@ const handleLogout = () => {
             :class="[$route.path.startsWith('/user/borrowed') ? 'border-primary-500 text-primary-700 dark:text-primary-300 bg-primary-50 dark:bg-primary-900 bg-opacity-50' : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200']"
             @click="mobileMenuOpen = false"
           >
-            My Books
+            Sách của tôi
           </router-link>
           
           <router-link 
@@ -176,14 +171,14 @@ const handleLogout = () => {
             :class="[$route.path.startsWith('/user/profile') ? 'border-primary-500 text-primary-700 dark:text-primary-300 bg-primary-50 dark:bg-primary-900 bg-opacity-50' : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200']"
             @click="mobileMenuOpen = false"
           >
-            Profile
+            Hồ sơ
           </router-link>
           
           <button 
             @click="handleLogout" 
             class="block w-full text-left pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200"
           >
-            Logout
+            Đăng xuất
           </button>
         </template>
         
@@ -193,7 +188,7 @@ const handleLogout = () => {
             class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200"
             @click="mobileMenuOpen = false"
           >
-            Login
+            Đăng nhập
           </router-link>
           
           <router-link 
@@ -201,7 +196,7 @@ const handleLogout = () => {
             class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200"
             @click="mobileMenuOpen = false"
           >
-            Register
+            Đăng ký
           </router-link>
         </template>
       </div>

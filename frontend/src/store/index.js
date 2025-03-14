@@ -7,7 +7,7 @@ import users from './modules/users';
 const store = {
   state() {
     return {
-      appName: 'Library Management System',
+      appName: 'Hệ Thống Quản Lý Thư Viện',
       darkMode: false,
       loading: false,
       error: null,
@@ -82,4 +82,4 @@ const store = {
   }
 };
 
-export default store; 
+export default store;

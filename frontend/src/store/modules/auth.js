@@ -73,7 +73,7 @@ const auth = {
       
       try {
         const response = await apiService.auth.login(credentials);
-        console.log('Login response data:', response.data);
+        console.log('Dữ liệu phản hồi đăng nhập:', response.data);
         
         // Ensure we're using the correct property names from the response
         const { token, taiKhoan, hoTen, role } = response.data;
@@ -93,7 +93,7 @@ const auth = {
         
         return true;
       } catch (error) {
-        console.error('Login error:', error);
+        console.error('Lỗi đăng nhập:', error);
         const errorMessage = error.response?.data?.message || 'Đăng nhập thất bại. Vui lòng thử lại.';
         commit('SET_ERROR', errorMessage);
         

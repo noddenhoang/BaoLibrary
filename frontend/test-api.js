@@ -1,7 +1,7 @@
-// Simple test script to test API connection
+// Script đơn giản để kiểm tra kết nối API
 import axios from 'axios';
 
-// Configure axios
+// Cấu hình axios
 const api = axios.create({
   baseURL: 'http://localhost:8080/api',
   timeout: 10000,
@@ -11,11 +11,11 @@ const api = axios.create({
   }
 });
 
-// Test login request
+// Kiểm tra yêu cầu đăng nhập
 async function testLogin() {
   try {
-    console.log('Sending login request...');
-    console.log('Request data:', {
+    console.log('Đang gửi yêu cầu đăng nhập...');
+    console.log('Dữ liệu yêu cầu:', {
       taiKhoan: 'admin',
       matKhau: 'admin123'
     });
@@ -25,35 +25,35 @@ async function testLogin() {
       matKhau: 'admin123'
     });
     
-    console.log('Login response:', response.data);
+    console.log('Phản hồi đăng nhập:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Login error:');
+    console.error('Lỗi đăng nhập:');
     
     if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      console.error('Status:', error.response.status);
-      console.error('Data:', error.response.data);
+      // Yêu cầu đã được gửi và máy chủ phản hồi với mã trạng thái
+      // không nằm trong khoảng 2xx
+      console.error('Trạng thái:', error.response.status);
+      console.error('Dữ liệu:', error.response.data);
       console.error('Headers:', error.response.headers);
     } else if (error.request) {
-      // The request was made but no response was received
-      console.error('No response received:', error.request);
+      // Yêu cầu đã được gửi nhưng không nhận được phản hồi
+      console.error('Không nhận được phản hồi:', error.request);
     } else {
-      // Something happened in setting up the request that triggered an Error
-      console.error('Request setup error:', error.message);
+      // Đã xảy ra lỗi khi thiết lập yêu cầu
+      console.error('Lỗi cài đặt yêu cầu:', error.message);
     }
     
-    console.error('Error config:', error.config);
+    console.error('Cấu hình lỗi:', error.config);
     return null;
   }
 }
 
-// Execute the test
+// Thực hiện kiểm tra
 testLogin()
   .then(result => {
-    console.log('Test completed:', result ? 'SUCCESS' : 'FAILED');
+    console.log('Kiểm tra hoàn tất:', result ? 'THÀNH CÔNG' : 'THẤT BẠI');
   })
   .catch(err => {
-    console.error('Test error:', err);
-  }); 
+    console.error('Lỗi kiểm tra:', err);
+  });
