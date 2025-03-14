@@ -18,6 +18,13 @@ const books = {
       page: 1,
       size: 10,
       totalPages: 0
+    },
+    pagedBooks: {
+      content: [],
+      totalElements: 0,
+      totalPages: 0,
+      number: 0,
+      size: 10
     }
   }),
   
@@ -26,6 +33,10 @@ const books = {
       state.books = books;
       state.totalBooks = totalBooks;
       state.pagination.totalPages = totalPages;
+    },
+    
+    SET_PAGED_BOOKS(state, pagedBooks) {
+      state.pagedBooks = pagedBooks;
     },
     
     SET_BOOK(state, book) {
@@ -59,38 +70,29 @@ const books = {
   },
   
   actions: {
-    // Note: These are placeholder actions that will be implemented in Increment 3
-    async fetchBooks({ commit, state }) {
+    async fetchBooks({ commit }, params) {
       try {
         commit('SET_LOADING', true);
         
-        // This is a placeholder - will be replaced with actual API call in Increment 3
-        const mockedBooks = Array(10).fill().map((_, index) => ({
-          id: index + 1,
-          title: `Book Title ${index + 1}`,
-          author: `Author ${index + 1}`,
-          isbn: `978-3-16-1484${index}0-0`,
-          publishedYear: 2010 + index,
-          genre: index % 2 === 0 ? 'Fiction' : 'Non-Fiction',
-          available: index % 3 !== 0
-        }));
+        // This will be replaced with actual API call in Increment 3
+        const response = await this.$axios.get('/api/books', { params });
         
-        const { page, size } = state.pagination;
-        const totalBooks = 100; // Mock total
-        const totalPages = Math.ceil(totalBooks / size);
+        const pagedBooks = response.data || {
+          content: [],
+          totalElements: 0,
+          totalPages: 0,
+          number: 0,
+          size: params.pageSize || 10
+        };
         
-        // Simulate API delay
-        setTimeout(() => {
-          commit('SET_BOOKS', { 
-            books: mockedBooks, 
-            totalBooks, 
-            totalPages 
-          });
-          commit('SET_LOADING', false);
-        }, 500);
+        commit('SET_PAGED_BOOKS', pagedBooks);
+        commit('SET_LOADING', false);
+        return pagedBooks;
       } catch (error) {
+        console.error('Error fetching books:', error);
         commit('SET_ERROR', error.message || 'Failed to fetch books');
         commit('SET_LOADING', false);
+        throw error;
       }
     },
     
@@ -98,29 +100,72 @@ const books = {
       try {
         commit('SET_LOADING', true);
         
-        // This is a placeholder - will be replaced with actual API call in Increment 3
-        const mockedBook = {
-          id: bookId,
-          title: `Book Title ${bookId}`,
-          author: `Author ${bookId}`,
-          isbn: `978-3-16-1484${bookId}0-0`,
-          publishedYear: 2010 + parseInt(bookId),
-          genre: parseInt(bookId) % 2 === 0 ? 'Fiction' : 'Non-Fiction',
-          available: parseInt(bookId) % 3 !== 0,
-          description: 'This is a detailed description of the book. It contains information about the plot, characters, and themes explored in the book.',
-          coverImage: 'https://via.placeholder.com/150',
-          totalCopies: 5,
-          availableCopies: parseInt(bookId) % 3 !== 0 ? 2 : 0
-        };
-        
-        // Simulate API delay
-        setTimeout(() => {
-          commit('SET_BOOK', mockedBook);
-          commit('SET_LOADING', false);
-        }, 500);
+        // This will be replaced with actual API call in Increment 3
+        const response = await this.$axios.get(`/api/books/${bookId}`);
+        commit('SET_BOOK', response.data);
+        commit('SET_LOADING', false);
+        return response.data;
       } catch (error) {
+        console.error('Error fetching book:', error);
         commit('SET_ERROR', error.message || 'Failed to fetch book details');
         commit('SET_LOADING', false);
+        throw error;
+      }
+    },
+    
+    async searchBooks({ commit }, params) {
+      try {
+        commit('SET_LOADING', true);
+        
+        const response = await this.$axios.get('/api/books/search', { params });
+        commit('SET_PAGED_BOOKS', response.data);
+        commit('SET_LOADING', false);
+        return response.data;
+      } catch (error) {
+        console.error('Error searching books:', error);
+        commit('SET_ERROR', error.message || 'Failed to search books');
+        commit('SET_LOADING', false);
+        throw error;
+      }
+    },
+    
+    async fetchBooksByCategory({ commit }, params) {
+      try {
+        commit('SET_LOADING', true);
+        
+        const { categoryId, ...queryParams } = params;
+        const response = await this.$axios.get(`/api/books/category/${categoryId}`, { 
+          params: queryParams 
+        });
+        
+        commit('SET_PAGED_BOOKS', response.data);
+        commit('SET_LOADING', false);
+        return response.data;
+      } catch (error) {
+        console.error('Error fetching books by category:', error);
+        commit('SET_ERROR', error.message || 'Failed to fetch books by category');
+        commit('SET_LOADING', false);
+        throw error;
+      }
+    },
+    
+    async fetchBooksByAuthor({ commit }, params) {
+      try {
+        commit('SET_LOADING', true);
+        
+        const { authorId, ...queryParams } = params;
+        const response = await this.$axios.get(`/api/books/author/${authorId}`, { 
+          params: queryParams 
+        });
+        
+        commit('SET_PAGED_BOOKS', response.data);
+        commit('SET_LOADING', false);
+        return response.data;
+      } catch (error) {
+        console.error('Error fetching books by author:', error);
+        commit('SET_ERROR', error.message || 'Failed to fetch books by author');
+        commit('SET_LOADING', false);
+        throw error;
       }
     },
     
@@ -144,6 +189,7 @@ const books = {
   
   getters: {
     booksList: state => state.books,
+    pagedBooks: state => state.pagedBooks,
     currentBook: state => state.book,
     isLoading: state => state.loading,
     error: state => state.error,
@@ -153,4 +199,4 @@ const books = {
   }
 };
 
-export default books; 
+export default books;

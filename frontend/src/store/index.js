@@ -2,6 +2,8 @@
 import auth from './modules/auth';
 import books from './modules/books';
 import users from './modules/users';
+import categories from './modules/categories';
+import authors from './modules/authors';
 
 // Root store configuration
 const store = {
@@ -78,7 +80,9 @@ const store = {
   modules: {
     auth,
     books,
-    users
+    users,
+    categories,
+    authors
   }
 };
 

@@ -7,13 +7,14 @@ import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import 'vuetify/styles'
+import axios from 'axios'
 
 import App from './App.vue'
 import router, { setStore } from './router'
 import storeConfig from './store'
 
 // Initialize API service
-import './services/api.service';
+import apiService from './services/api.service';
 
 // Create Vuetify instance
 const vuetify = createVuetify({
@@ -54,6 +55,9 @@ const vuetify = createVuetify({
 
 // Create store instance
 const store = createStore(storeConfig)
+
+// Inject axios into the store
+store.$axios = axios
 
 // Connect store to router
 setStore(store)

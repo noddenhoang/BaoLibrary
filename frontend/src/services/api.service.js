@@ -61,7 +61,45 @@ const apiService = {
     }
   },
   
-  // Other API services can be added here
+  // Books API
+  books: {
+    getAll: (params) => axios.get('/books', { params }),
+    getById: (id) => axios.get(`/books/${id}`),
+    search: (query, params) => axios.get('/books/search', { params: { ...params, keyword: query } }),
+    getByCategory: (categoryId, params) => axios.get(`/books/category/${categoryId}`, { params }),
+    getByAuthor: (authorId, params) => axios.get(`/books/author/${authorId}`, { params }),
+    create: (bookData) => axios.post('/books', bookData),
+    update: (id, bookData) => axios.put(`/books/${id}`, bookData),
+    delete: (id) => axios.delete(`/books/${id}`)
+  },
+  
+  // Categories API
+  categories: {
+    getAll: () => axios.get('/categories'),
+    getById: (id) => axios.get(`/categories/${id}`),
+    create: (categoryData) => axios.post('/categories', categoryData),
+    update: (id, categoryData) => axios.put(`/categories/${id}`, categoryData),
+    delete: (id) => axios.delete(`/categories/${id}`)
+  },
+  
+  // Authors API
+  authors: {
+    getAll: () => axios.get('/authors'),
+    getById: (id) => axios.get(`/authors/${id}`),
+    create: (authorData) => axios.post('/authors', authorData),
+    update: (id, authorData) => axios.put(`/authors/${id}`, authorData),
+    delete: (id) => axios.delete(`/authors/${id}`)
+  },
+  
+  // User borrowing/returns
+  borrowing: {
+    // ...existing code...
+  },
+  
+  // Admin features
+  admin: {
+    // ...existing code...
+  }
 };
 
 // Initialize API service when imported
