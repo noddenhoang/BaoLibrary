@@ -39,111 +39,94 @@
             <!-- Book Cover -->
             <v-col cols="12" sm="4" md="3" class="pa-4">
               <v-img
-                :src="book.hinhAnhSach || 'https://placehold.co/300x450/e2e8f0/1e293b?text=No+Image'"
+                :src="book.hinhAnhSach || '/placeholder-book.png'"
                 :alt="book.tuaSach"
-                height="350"
-                class="mx-auto rounded book-cover"
+                height="400"
+                class="rounded"
                 cover
               ></v-img>
-              
-              <div class="d-flex justify-center mt-4">
-                <v-btn 
-                  color="primary" 
-                  prepend-icon="mdi-book-open-page-variant" 
-                  class="mr-2"
-                  :to="{ name: 'BorrowedBooks' }"
-                >
-                  Mượn sách
-                </v-btn>
-                <v-btn 
-                  color="secondary" 
-                  icon 
-                  @click="toggleFavorite" 
-                  :variant="isFavorite ? 'flat' : 'outlined'"
-                >
-                  <v-icon :color="isFavorite ? 'error' : undefined">
-                    {{ isFavorite ? 'mdi-heart' : 'mdi-heart-outline' }}
-                  </v-icon>
-                </v-btn>
-              </div>
             </v-col>
             
             <!-- Book Info -->
             <v-col cols="12" sm="8" md="9" class="pa-4">
-              <h1 class="text-h4 mb-2">{{ book.tuaSach }}</h1>
+              <h1 class="text-h4 font-weight-bold mb-2">{{ book.tuaSach }}</h1>
               
-              <div class="mb-4">
-                <div v-if="book.authors && book.authors.length > 0" class="mb-2">
-                  <span class="text-subtitle-1 font-weight-medium">Tác giả:</span>
-                  <span class="ml-2">
-                    <template v-for="(author, index) in book.authors" :key="author.authorId">
-                      <span>{{ author.authorName }}</span>
-                      <span v-if="index < book.authors.length - 1">, </span>
-                    </template>
-                  </span>
-                </div>
-                
-                <div v-if="book.namXuatBan" class="mb-2">
-                  <span class="text-subtitle-1 font-weight-medium">Năm xuất bản:</span>
-                  <span class="ml-2">{{ book.namXuatBan }}</span>
-                </div>
-                
-                <div v-if="book.categories && book.categories.length > 0" class="mb-2">
-                  <span class="text-subtitle-1 font-weight-medium">Danh mục:</span>
-                  <div class="d-flex flex-wrap mt-1">
-                    <v-chip
-                      v-for="category in book.categories"
-                      :key="category.categoryId"
-                      color="secondary"
-                      variant="flat"
-                      class="mr-2 mb-2"
-                    >
-                      {{ category.categoryName }}
-                    </v-chip>
-                  </div>
-                </div>
-              </div>
+              <!-- Authors -->
+              <p class="text-subtitle-1 mb-2" v-if="book.authors && book.authors.length">
+                <span class="font-weight-medium">Tác giả:</span>
+                <span v-for="(author, index) in book.authors" :key="author.authorId">
+                  {{ author.tenTacGia }}{{ index < book.authors.length - 1 ? ', ' : '' }}
+                </span>
+              </p>
               
-              <v-divider class="mb-4"></v-divider>
-              
-              <!-- Book Description -->
-              <div v-if="book.moTa" class="mb-6">
-                <h2 class="text-h6 mb-2">Mô tả</h2>
-                <div class="text-body-1">
-                  {{ book.moTa }}
-                </div>
-              </div>
-              
-              <!-- Book Status -->
-              <div class="mb-4">
-                <h2 class="text-h6 mb-2">Trạng thái</h2>
-                <v-chip color="success" variant="flat" class="mr-2">
-                  <v-icon start>mdi-check-circle</v-icon>
-                  Còn sách
+              <!-- Categories -->
+              <div class="mb-4" v-if="book.categories && book.categories.length">
+                <v-chip
+                  v-for="category in book.categories"
+                  :key="category.categoryId"
+                  class="mr-2 mb-2"
+                  color="primary"
+                  variant="flat"
+                >
+                  {{ category.categoryName }}
                 </v-chip>
               </div>
+              
+              <!-- Year -->
+              <p class="text-body-1 mb-4" v-if="book.namXuatBan">
+                <span class="font-weight-medium">Năm xuất bản:</span> {{ book.namXuatBan }}
+              </p>
+              
+              <!-- Description -->
+              <div class="mb-6" v-if="book.moTa">
+                <h3 class="text-h6 font-weight-medium mb-2">Mô tả</h3>
+                <p class="text-body-1">{{ book.moTa }}</p>
+              </div>
+              
+              <!-- Actions -->
+              <div class="d-flex flex-wrap gap-2">
+                <v-btn
+                  color="primary"
+                  prepend-icon="mdi-book-open-page-variant"
+                  :disabled="!isLoggedIn"
+                  @click="borrowBook"
+                >
+                  Mượn sách
+                </v-btn>
+                
+                <v-btn
+                  variant="outlined"
+                  color="primary"
+                  prepend-icon="mdi-heart"
+                  :disabled="!isLoggedIn"
+                  @click="toggleFavorite"
+                >
+                  Yêu thích
+                </v-btn>
+              </div>
+              
+              <!-- Login Prompt -->
+              <v-alert
+                v-if="!isLoggedIn"
+                type="info"
+                class="mt-6"
+              >
+                Bạn cần <router-link to="/login" class="font-weight-bold">đăng nhập</router-link> để mượn sách.
+              </v-alert>
             </v-col>
           </v-row>
         </v-card>
-        
-        <!-- Related Books Section (Mock) -->
-        <div class="mt-8">
-          <h2 class="text-h5 mb-4">Sách liên quan</h2>
-          <p class="text-body-1 text-grey">
-            Tính năng này sẽ được triển khai trong phiên bản tiếp theo.
-          </p>
-        </div>
       </template>
       
-      <!-- Book Not Found -->
-      <div v-else class="text-center py-10">
-        <v-icon size="x-large" color="grey">mdi-book-off</v-icon>
-        <p class="text-h6 text-grey mt-4">Không tìm thấy thông tin sách</p>
+      <!-- Book not found -->
+      <div v-else class="text-center my-12">
+        <v-icon size="96" color="grey">mdi-book-off</v-icon>
+        <h2 class="text-h5 mt-4">Không tìm thấy sách</h2>
+        <p class="text-body-1 mt-2">Sách bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.</p>
         <v-btn
           class="mt-4"
-          :to="{ name: 'Catalog' }"
-          variant="outlined"
           color="primary"
+          :to="{ name: 'Catalog' }"
         >
           Quay lại danh sách sách
         </v-btn>
@@ -153,63 +136,73 @@
 </template>
 
 <script>
-import apiService from '@/services/api.service';
+import { mapGetters, mapActions } from 'vuex';
 
 export default {
-  name: 'BookDetailsPage',
+  name: 'BookDetailsView',
   data() {
     return {
-      book: null,
-      loading: false,
+      loading: true,
       error: null,
-      isFavorite: false
+      book: null
     };
   },
   computed: {
+    ...mapGetters('auth', ['isAuthenticated']),
+    
+    isLoggedIn() {
+      return this.isAuthenticated;
+    },
+    
     bookId() {
-      return this.$route.params.id;
+      return parseInt(this.$route.params.id);
     }
   },
   methods: {
-    async fetchBookDetails() {
+    ...mapActions('books', ['fetchBookById']),
+    
+    async loadBook() {
       this.loading = true;
       this.error = null;
       
       try {
-        const response = await apiService.books.getById(this.bookId);
-        this.book = response.data;
+        this.book = await this.fetchBookById(this.bookId);
       } catch (error) {
-        console.error('Error fetching book details:', error);
+        console.error('Error fetching book:', error);
         this.error = 'Không thể tải thông tin sách. Vui lòng thử lại sau.';
       } finally {
         this.loading = false;
       }
     },
+    
+    borrowBook() {
+      if (!this.isLoggedIn) {
+        this.$router.push({ 
+          path: '/login',
+          query: { redirect: this.$route.fullPath }
+        });
+        return;
+      }
+      
+      // To be implemented
+      alert('Chức năng mượn sách sẽ được phát triển trong phiên bản tiếp theo!');
+    },
+    
     toggleFavorite() {
-      this.isFavorite = !this.isFavorite;
-      // TODO: Implement favorite functionality in later increment
+      if (!this.isLoggedIn) {
+        this.$router.push({ 
+          path: '/login',
+          query: { redirect: this.$route.fullPath }
+        });
+        return;
+      }
+      
+      // To be implemented
+      alert('Chức năng yêu thích sẽ được phát triển trong phiên bản tiếp theo!');
     }
   },
-  mounted() {
-    this.fetchBookDetails();
-  },
-  watch: {
-    // Refetch data if book ID changes (unlikely but good practice)
-    bookId() {
-      this.fetchBookDetails();
-    }
+  created() {
+    this.loadBook();
   }
 };
 </script>
-
-<style scoped>
-.book-cover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.book-cover:hover {
-  transform: scale(1.02);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-}
-</style> 

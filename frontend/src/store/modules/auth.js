@@ -1,6 +1,7 @@
 // Authentication Store Module
 import apiService from '@/services/api.service';
 import router from '@/router';
+import axios from 'axios';
 
 const auth = {
   namespaced: true,
@@ -67,25 +68,34 @@ const auth = {
   },
   
   actions: {
-    async login({ commit, dispatch }, credentials) {
+    async login({ commit, dispatch }, authData) {
       commit('SET_LOADING', true);
       commit('CLEAR_ERROR');
       
       try {
-        const response = await apiService.auth.login(credentials);
-        console.log('Dữ liệu phản hồi đăng nhập:', response.data);
+        console.log('Login action with authData:', authData);
+        // Make the API call if we don't already have a response
+        const responseData = authData.token 
+          ? authData 
+          : (await apiService.auth.login(authData)).data;
         
-        // Ensure we're using the correct property names from the response
-        const { token, taiKhoan, hoTen, role } = response.data;
+        console.log('Login response received:', responseData);
         
-        commit('SET_TOKEN', token);
+        if (!responseData || !responseData.token) {
+          throw new Error('No token received from server');
+        }
+        
+        // Save token and user data
+        commit('SET_TOKEN', responseData.token);
         commit('SET_USER', { 
-          username: taiKhoan, 
-          fullName: hoTen, 
-          role: role
+          username: responseData.taiKhoan, 
+          fullName: responseData.hoTen, 
+          role: responseData.role
         });
         
-        // Dispatch to root store to show success notification
+        // Set token in axios default headers for subsequent requests
+        axios.defaults.headers.common['Authorization'] = `Bearer ${responseData.token}`;
+        
         dispatch('setNotification', { 
           type: 'success', 
           message: 'Đăng nhập thành công!' 
@@ -93,16 +103,10 @@ const auth = {
         
         return true;
       } catch (error) {
-        console.error('Lỗi đăng nhập:', error);
+        console.error('Login error:', error);
         const errorMessage = error.response?.data?.message || 'Đăng nhập thất bại. Vui lòng thử lại.';
         commit('SET_ERROR', errorMessage);
-        
-        // Dispatch to root store to show error notification
-        dispatch('setNotification', { 
-          type: 'error', 
-          message: errorMessage 
-        }, { root: true });
-        
+        dispatch('setNotification', { type: 'error', message: errorMessage }, { root: true });
         return false;
       } finally {
         commit('SET_LOADING', false);
@@ -269,7 +273,18 @@ const auth = {
       router.push('/login');
     },
     
-    checkAuth({ state }) {
+    checkAuth({ state, commit }) {
+      // Check if token exists and is not expired
+      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user'));
+      
+      if (!token || !user) {
+        commit('LOGOUT');
+        return false;
+      }
+      
+      // Set token in axios default headers
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       return state.isAuthenticated;
     }
   },

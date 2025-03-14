@@ -20,7 +20,7 @@ public class BookController {
     
     // Tạo sách mới (chỉ admin hoặc manager)
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_MANAGER')")
+    @PreAuthorize("hasAuthority('admin') or hasAuthority('manager')")
     public ResponseEntity<BookResponseDto> createBook(@Valid @RequestBody BookDto bookDto) {
         return new ResponseEntity<>(bookService.createBook(bookDto), HttpStatus.CREATED);
     }
@@ -70,7 +70,7 @@ public class BookController {
     
     // Cập nhật sách (chỉ admin hoặc manager)
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_MANAGER')")
+    @PreAuthorize("hasAuthority('admin') or hasAuthority('manager')")
     public ResponseEntity<BookResponseDto> updateBook(
             @PathVariable Integer id, 
             @Valid @RequestBody BookDto bookDto) {
@@ -79,7 +79,7 @@ public class BookController {
     
     // Xóa sách (chỉ admin)
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('admin')")
     public ResponseEntity<Void> deleteBook(@PathVariable Integer id) {
         bookService.deleteBook(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);

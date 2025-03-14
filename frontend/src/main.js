@@ -9,8 +9,11 @@ import * as directives from 'vuetify/directives'
 import 'vuetify/styles'
 
 import App from './App.vue'
-import router from './router'
+import router, { setStore } from './router'
 import storeConfig from './store'
+
+// Initialize API service
+import './services/api.service';
 
 // Create Vuetify instance
 const vuetify = createVuetify({
@@ -51,6 +54,9 @@ const vuetify = createVuetify({
 
 // Create store instance
 const store = createStore(storeConfig)
+
+// Connect store to router
+setStore(store)
 
 // Create and mount the app
 const app = createApp(App)

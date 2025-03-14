@@ -1,24 +1,8 @@
 <template>
   <div class="profile-page py-8">
-    <h1 class="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Thông tin cá nhân</h1>
-    
-    <v-alert
-      v-if="error"
-      type="error"
-      variant="tonal"
-      class="mb-4"
-      closable
-      @click:close="clearError"
-    >
-      {{ error }}
-    </v-alert>
-    
-    <div v-if="loading" class="flex justify-center my-8">
-      <v-progress-circular
-        indeterminate
-        color="primary"
-        size="64"
-      ></v-progress-circular>
+    <div v-if="loading" class="text-center py-8">
+      <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+      <p class="mt-4 text-gray-600 dark:text-gray-400">Loading profile data...</p>
     </div>
     
     <div v-else-if="user" class="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -128,53 +112,45 @@ import { mapActions, mapGetters } from 'vuex';
 
 export default {
   name: 'ProfileView',
-  
   data() {
     return {
-      localError: null
+      loading: true
     };
   },
-  
   computed: {
-    ...mapGetters('auth', ['user', 'loading', 'error']),
+    ...mapGetters('auth', ['user']),
     
     roleColor() {
-      const roleColors = {
-        admin: 'error',
-        manager: 'warning',
-        member: 'primary'
-      };
-      return roleColors[this.user?.role] || 'primary';
+      if (!this.user) return '';
+      switch (this.user.role) {
+        case 'admin': return 'error';
+        case 'manager': return 'warning';
+        default: return 'primary';
+      }
     },
     
     roleLabel() {
-      const roleLabels = {
-        admin: 'Quản trị viên',
-        manager: 'Quản lý',
-        member: 'Thành viên'
-      };
-      return roleLabels[this.user?.role] || 'Thành viên';
+      if (!this.user) return '';
+      switch (this.user.role) {
+        case 'admin': return 'Quản trị viên';
+        case 'manager': return 'Quản lý';
+        default: return 'Thành viên';
+      }
     }
   },
-  
   methods: {
-    ...mapActions('auth', ['fetchUserProfile', 'clearError']),
+    ...mapActions('auth', ['fetchUserProfile']),
     
     formatDate(dateString) {
       if (!dateString) return 'N/A';
-      
       const date = new Date(dateString);
-      return new Intl.DateTimeFormat('vi-VN', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      }).format(date);
+      return new Intl.DateTimeFormat('vi-VN').format(date);
     }
   },
-  
-  async mounted() {
-    this.clearError();
+  async created() {
+    this.loading = true;
     await this.fetchUserProfile();
+    this.loading = false;
   }
 };
-</script> 
+</script>

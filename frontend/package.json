@@ -1,12 +1,15 @@
 {
   "name": "frontend",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
+  "description": "Library Management System Frontend",
+  "main": "src/main.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node test-api.js"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",

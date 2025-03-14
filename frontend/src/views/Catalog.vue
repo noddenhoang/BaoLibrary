@@ -27,33 +27,26 @@
       <div v-if="loading" class="d-flex justify-center my-12">
         <v-progress-circular
           indeterminate
-          color="primary"
           size="64"
+          color="primary"
         ></v-progress-circular>
       </div>
       
-      <!-- Error State -->
-      <v-alert
-        v-else-if="error"
-        type="error"
-        variant="tonal"
-        class="my-4"
-      >
-        {{ error }}
-      </v-alert>
-      
-      <!-- Book Results -->
-      <template v-else>
-        <!-- Grid View -->
-        <book-grid
-          v-if="viewMode === 'grid'"
-          :books="pagedBooks.content || []"
-        />
+      <!-- Books Grid/List View -->
+      <div v-else>
+        <!-- Show books in grid view -->
+        <div v-if="viewMode === 'grid'" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <book-card
+            v-for="book in pagedBooks.content"
+            :key="book.bookId"
+            :book="book"
+          />
+        </div>
         
-        <!-- List View -->
+        <!-- Show books in list view -->
         <book-list
           v-else
-          :books="pagedBooks.content || []"
+          :books="pagedBooks.content"
         />
         
         <!-- Pagination -->
@@ -66,145 +59,114 @@
           @page-changed="handlePageChange"
           @size-changed="handlePageSizeChange"
         />
-      </template>
+      </div>
     </v-container>
   </div>
 </template>
 
 <script>
-import apiService from '@/services/api.service';
-import BookFilters from '@/components/book/BookFilters.vue';
-import ViewToggle from '@/components/book/ViewToggle.vue';
-import BookGrid from '@/components/book/BookGrid.vue';
+import BookCard from '@/components/book/BookCard.vue';
 import BookList from '@/components/book/BookList.vue';
+import BookFilters from '@/components/book/BookFilters.vue';
 import BookPagination from '@/components/book/BookPagination.vue';
+import ViewToggle from '@/components/common/ViewToggle.vue';
+import { mapActions, mapGetters } from 'vuex';
 
 export default {
-  name: 'CatalogPage',
+  name: 'CatalogView',
   components: {
-    BookFilters,
-    ViewToggle,
-    BookGrid,
+    BookCard,
     BookList,
-    BookPagination
+    BookFilters,
+    BookPagination,
+    ViewToggle
   },
   data() {
     return {
-      viewMode: localStorage.getItem('catalogViewMode') || 'grid',
-      pagedBooks: {
-        content: [],
-        totalElements: 0,
-        totalPages: 0,
+      viewMode: localStorage.getItem('viewMode') || 'grid',
+      loading: true,
+      pagination: {
         pageNo: 0,
-        pageSize: 10,
-        last: true
-      },
-      filters: {
-        keyword: '',
-        categoryId: null,
-        authorId: null,
-        year: null,
+        pageSize: 12,
         sortBy: 'tuaSach',
         sortDir: 'asc'
       },
-      pagination: {
-        pageNo: 0,
-        pageSize: 10
-      },
-      categories: [],
-      authors: [],
-      loading: false,
-      error: null
+      filters: {}
     };
   },
+  computed: {
+    ...mapGetters('books', ['pagedBooks']),
+    ...mapGetters('categories', ['categories']),
+    ...mapGetters('authors', ['authors'])
+  },
   methods: {
-    async fetchData() {
-      this.loading = true;
-      this.error = null;
-      
-      try {
-        let endpoint = '/books';
-        let params = {
-          pageNo: this.pagination.pageNo,
-          pageSize: this.pagination.pageSize,
-          sortBy: this.filters.sortBy,
-          sortDir: this.filters.sortDir
-        };
-        
-        // Handle search query
-        if (this.filters.keyword) {
-          endpoint = '/books/search';
-          params.keyword = this.filters.keyword;
-        }
-        
-        // Handle category filter
-        if (this.filters.categoryId) {
-          endpoint = `/books/category/${this.filters.categoryId}`;
-        }
-        
-        // Handle author filter
-        if (this.filters.authorId) {
-          endpoint = `/books/author/${this.filters.authorId}`;
-        }
-        
-        // Fetch books based on filters and pagination
-        const response = await apiService.books.getAll(params);
-        this.pagedBooks = response.data;
-      } catch (error) {
-        console.error('Error fetching books:', error);
-        this.error = 'Không thể tải danh sách sách. Vui lòng thử lại sau.';
-      } finally {
-        this.loading = false;
-      }
-    },
-    
-    async fetchCategories() {
-      try {
-        const response = await apiService.categories.getAll();
-        this.categories = response.data;
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-      }
-    },
-    
-    async fetchAuthors() {
-      try {
-        const response = await apiService.authors.getAll();
-        this.authors = response.data;
-      } catch (error) {
-        console.error('Error fetching authors:', error);
-      }
-    },
+    ...mapActions('books', ['fetchBooks', 'searchBooks', 'fetchBooksByCategory', 'fetchBooksByAuthor']),
+    ...mapActions('categories', ['fetchCategories']),
+    ...mapActions('authors', ['fetchAuthors']),
     
     handleFilterChange(filters) {
       this.filters = { ...filters };
-      this.pagination.pageNo = 0; // Reset to first page on filter change
-      this.fetchData();
+      this.pagination.pageNo = 0;
+      this.applyFilters();
     },
     
     handleViewChange(view) {
       this.viewMode = view;
-      localStorage.setItem('catalogViewMode', view);
+      localStorage.setItem('viewMode', view);
     },
     
     handlePageChange(page) {
       this.pagination.pageNo = page;
-      this.fetchData();
-      // Scroll to top
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      this.applyFilters();
     },
     
     handlePageSizeChange(size) {
       this.pagination.pageSize = size;
-      this.pagination.pageNo = 0; // Reset to first page when changing page size
-      this.fetchData();
+      this.pagination.pageNo = 0;
+      this.applyFilters();
+    },
+    
+    applyFilters() {
+      this.loading = true;
+      
+      const { keyword, categoryId, authorId, sortBy, sortDir } = this.filters;
+      
+      if (sortBy) this.pagination.sortBy = sortBy;
+      if (sortDir) this.pagination.sortDir = sortDir;
+      
+      if (categoryId) {
+        this.fetchBooksByCategory({ 
+          categoryId, 
+          ...this.pagination 
+        }).finally(() => this.loading = false);
+      } else if (authorId) {
+        this.fetchBooksByAuthor({ 
+          authorId, 
+          ...this.pagination 
+        }).finally(() => this.loading = false);
+      } else if (keyword) {
+        this.searchBooks({ 
+          keyword, 
+          ...this.pagination 
+        }).finally(() => this.loading = false);
+      } else {
+        this.fetchBooks(this.pagination)
+          .finally(() => this.loading = false);
+      }
     }
   },
-  mounted() {
-    // Load initial data
-    this.fetchData();
-    this.fetchCategories();
-    this.fetchAuthors();
+  async created() {
+    try {
+      await Promise.all([
+        this.fetchCategories(),
+        this.fetchAuthors()
+      ]);
+      
+      this.applyFilters();
+    } catch (error) {
+      console.error('Error initializing catalog:', error);
+      this.loading = false;
+    }
   }
 };
 </script>
@@ -213,4 +175,4 @@ export default {
 .catalog-page {
   min-height: 70vh;
 }
-</style> 
+</style>

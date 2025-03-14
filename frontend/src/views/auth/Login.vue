@@ -109,12 +109,22 @@ export default {
     async submitLogin() {
       if (!this.$refs.form.validate()) return;
       
+      console.log('Submitting login with credentials:', {
+        taiKhoan: this.credentials.taiKhoan,
+        matKhau: '[REDACTED]'
+      });
+      
       const success = await this.login(this.credentials);
+      
+      console.log('Login success:', success);
       
       if (success) {
         // Check if there's a redirect URL in the query params
         const redirectPath = this.$route.query.redirect || '/';
+        console.log('Redirecting to:', redirectPath);
         this.$router.push(redirectPath);
+      } else {
+        console.log('Login failed');
       }
     }
   },
@@ -128,4 +138,4 @@ export default {
     };
   }
 };
-</script> 
+</script>

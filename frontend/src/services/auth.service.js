@@ -38,17 +38,16 @@ const authService = {
   /**
    * Log in a user with username and password
    * @param {Object} credentials - User credentials
-   * @param {string} credentials.username - Username
-   * @param {string} credentials.password - Password
+   * @param {string} credentials.taiKhoan - Username
+   * @param {string} credentials.matKhau - Password
    * @returns {Promise} Promise that resolves with user data
    */
   async login(credentials) {
     try {
-      // This is a placeholder for now - will be replaced with actual API call in Increment 2
-      console.log('Login with credentials:', credentials);
+      const response = await api.auth.login(credentials);
       
-      // For now, we'll use the store action (which is also a placeholder)
-      const success = await store.dispatch('auth/login', credentials);
+      // Store authentication data in Vuex
+      const success = await store.dispatch('auth/login', response.data);
       return success;
     } catch (error) {
       console.error('Login error:', error);
