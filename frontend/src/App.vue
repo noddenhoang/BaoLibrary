@@ -16,6 +16,7 @@ const notification = computed(() => store.getters.notification);
 const isLoading = computed(() => store.getters.isLoading);
 const isAuthenticated = computed(() => store.getters['auth/isAuthenticated']);
 const isAdmin = computed(() => store.getters['auth/isAdmin']);
+const snackbar = computed(() => store.getters.snackbar);
 
 // Check if the current route requires sidebar
 const showSidebar = computed(() => {
@@ -43,41 +44,66 @@ watch(darkMode, (newValue) => {
     document.documentElement.classList.remove('dark');
   }
 });
+
+// Close snackbar
+const closeSnackbar = () => {
+  store.commit('SET_SNACKBAR', { show: false });
+};
 </script>
 
 <template>
-  <div class="app-container" :class="{ 'dark': darkMode }">
-    <div class="min-h-screen flex flex-col bg-gray-50 dark:bg-secondary-950 text-gray-900 dark:text-gray-100">
-      <!-- Global loading indicator -->
-      <div v-if="isLoading" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-primary-500 border-solid"></div>
-      </div>
-      
-      <!-- Global notification -->
-      <AppNotification v-if="notification" :notification="notification" />
-      
-      <!-- Navigation bar -->
-      <AppNavbar />
-      
-      <!-- Main content area with optional sidebar -->
-      <div class="flex-grow flex">
-        <!-- Sidebar (only shown when authenticated and not on public pages) -->
-        <AppSidebar v-if="showSidebar" />
+  <v-app>
+    <div class="app-container" :class="{ 'dark': darkMode }">
+      <div class="min-h-screen flex flex-col bg-gray-50 dark:bg-secondary-950 text-gray-900 dark:text-gray-100">
+        <!-- Global loading indicator -->
+        <div v-if="isLoading" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-primary-500 border-solid"></div>
+        </div>
         
-        <!-- Main content -->
-        <main class="flex-grow p-4 md:p-6 transition-all duration-200">
-          <router-view v-slot="{ Component }">
-            <transition name="fade" mode="out-in">
-              <component :is="Component" />
-            </transition>
-          </router-view>
-        </main>
+        <!-- Global notification -->
+        <AppNotification v-if="notification" :notification="notification" />
+        
+        <!-- Navigation bar -->
+        <AppNavbar />
+        
+        <!-- Main content area with optional sidebar -->
+        <div class="flex-grow flex">
+          <!-- Sidebar (only shown when authenticated and not on public pages) -->
+          <AppSidebar v-if="showSidebar" />
+          
+          <!-- Main content -->
+          <main class="flex-grow p-4 md:p-6 transition-all duration-200">
+            <router-view v-slot="{ Component }">
+              <transition name="fade" mode="out-in">
+                <component :is="Component" />
+              </transition>
+            </router-view>
+          </main>
+        </div>
+        
+        <!-- Footer -->
+        <AppFooter />
       </div>
-      
-      <!-- Footer -->
-      <AppFooter />
     </div>
-  </div>
+    
+    <!-- Global Snackbar for notifications -->
+    <v-snackbar
+      v-model="snackbar.show"
+      :color="snackbar.color"
+      :timeout="snackbar.timeout"
+      location="top"
+    >
+      {{ snackbar.text }}
+      
+      <template v-slot:actions>
+        <v-btn
+          variant="text"
+          icon="mdi-close"
+          @click="closeSnackbar"
+        ></v-btn>
+      </template>
+    </v-snackbar>
+  </v-app>
 </template>
 
 <style>
@@ -90,4 +116,4 @@ watch(darkMode, (newValue) => {
 .fade-leave-to {
   opacity: 0;
 }
-</style> 
+</style>

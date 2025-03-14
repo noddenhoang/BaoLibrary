@@ -510,11 +510,12 @@ export default {
     async saveBook() {
       // Form validation
       if (!this.bookDialog.book.tuaSach) {
-        this.error = 'Tên sách là trường bắt buộc.';
+        this.$toast.error('Tên sách là trường bắt buộc.');
         return;
       }
       
       this.bookDialog.loading = true;
+      this.error = null; // Clear previous errors
       
       try {
         if (this.bookDialog.isEdit) {
@@ -530,9 +531,12 @@ export default {
         // Close dialog and refresh books
         this.bookDialog.show = false;
         this.fetchBooks();
+        return true; // Indicate success
       } catch (error) {
         console.error('Error saving book:', error);
-        this.error = 'Không thể lưu thông tin sách. Vui lòng thử lại sau.';
+        this.error = error.response?.data?.message || 'Không thể lưu thông tin sách. Vui lòng thử lại sau.';
+        this.$toast.error(this.error);
+        return false; // Indicate failure
       } finally {
         this.bookDialog.loading = false;
       }
@@ -547,6 +551,7 @@ export default {
     // Delete book
     async deleteBook() {
       this.deleteDialog.loading = true;
+      this.error = null; // Clear previous errors
       
       try {
         await apiService.books.delete(this.deleteDialog.book.bookId);
@@ -555,9 +560,12 @@ export default {
         // Close dialog and refresh books
         this.deleteDialog.show = false;
         this.fetchBooks();
+        return true; // Indicate success
       } catch (error) {
         console.error('Error deleting book:', error);
-        this.error = 'Không thể xóa sách. Vui lòng thử lại sau.';
+        this.error = error.response?.data?.message || 'Không thể xóa sách. Vui lòng thử lại sau.';
+        this.$toast.error(this.error);
+        return false; // Indicate failure
       } finally {
         this.deleteDialog.loading = false;
       }

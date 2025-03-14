@@ -1,108 +1,79 @@
 import axios from 'axios';
 
-const apiService = {
-  init(baseURL = 'http://localhost:8080/api') {
-    axios.defaults.baseURL = baseURL;
-    
-    // Add request interceptor to inject JWT token
-    axios.interceptors.request.use(
-      config => {
-        const token = localStorage.getItem('token');
-        if (token) {
-          config.headers['Authorization'] = `Bearer ${token}`;
-        }
-        return config;
-      },
-      error => {
-        return Promise.reject(error);
-      }
-    );
-    
-    // Add response interceptor to handle errors
-    axios.interceptors.response.use(
-      response => response,
-      error => {
-        // Handle 401 errors by redirecting to login
-        if (error.response && error.response.status === 401) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          // Use window.location instead of router to ensure full page reload
-          if (!window.location.href.includes('/login')) {
-            window.location.href = '/login';
-          }
-        }
-        return Promise.reject(error);
-      }
-    );
-  },
-  
-  // Auth API Endpoints
-  auth: {
-    login(credentials) {
-      console.log('Sending login request with credentials:', credentials);
-      return axios.post('/auth/login', credentials);
-    },
-    
-    register(userData) {
-      // Ensure data format matches backend expectations
-      return axios.post('/auth/register', userData);
-    },
-    
-    getProfile() {
-      return axios.get('/auth/profile');
-    },
-    
-    requestPasswordReset(email) {
-      return axios.post('/auth/forgot-password', { email });
-    },
-    
-    resetPassword(resetData) {
-      return axios.post('/auth/reset-password', resetData);
-    }
-  },
-  
-  // Books API
-  books: {
-    getAll: (params) => axios.get('/books', { params }),
-    getById: (id) => axios.get(`/books/${id}`),
-    search: (query, params) => axios.get('/books/search', { params: { ...params, keyword: query } }),
-    getByCategory: (categoryId, params) => axios.get(`/books/category/${categoryId}`, { params }),
-    getByAuthor: (authorId, params) => axios.get(`/books/author/${authorId}`, { params }),
-    create: (bookData) => axios.post('/books', bookData),
-    update: (id, bookData) => axios.put(`/books/${id}`, bookData),
-    delete: (id) => axios.delete(`/books/${id}`)
-  },
-  
-  // Categories API
-  categories: {
-    getAll: () => axios.get('/categories'),
-    getById: (id) => axios.get(`/categories/${id}`),
-    create: (categoryData) => axios.post('/categories', categoryData),
-    update: (id, categoryData) => axios.put(`/categories/${id}`, categoryData),
-    delete: (id) => axios.delete(`/categories/${id}`)
-  },
-  
-  // Authors API
-  authors: {
-    getAll: () => axios.get('/authors'),
-    getById: (id) => axios.get(`/authors/${id}`),
-    create: (authorData) => axios.post('/authors', authorData),
-    update: (id, authorData) => axios.put(`/authors/${id}`, authorData),
-    delete: (id) => axios.delete(`/authors/${id}`)
-  },
-  
-  // User borrowing/returns
-  borrowing: {
-    // ...existing code...
-  },
-  
-  // Admin features
-  admin: {
-    // ...existing code...
+const API_URL = 'http://localhost:8080/api';
+
+// Create axios instance with base configuration
+const apiClient = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
   }
+});
+
+// Request interceptor to add auth token
+apiClient.interceptors.request.use(
+  config => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  error => Promise.reject(error)
+);
+
+// Response interceptor for error handling
+apiClient.interceptors.response.use(
+  response => response,
+  error => {
+    console.error('API Error:', error.response || error);
+    return Promise.reject(error);
+  }
+);
+
+// Books API
+const books = {
+  getAll: (params) => apiClient.get('/books', { params }),
+  search: (keyword, params) => apiClient.get(`/books/search?keyword=${keyword}`, { params }),
+  getById: (id) => apiClient.get(`/books/${id}`),
+  getByCategory: (categoryId, params) => apiClient.get(`/books/category/${categoryId}`, { params }),
+  getByAuthor: (authorId, params) => apiClient.get(`/books/author/${authorId}`, { params }),
+  create: (bookData) => apiClient.post('/books', bookData),
+  update: (id, bookData) => apiClient.put(`/books/${id}`, bookData),
+  delete: (id) => apiClient.delete(`/books/${id}`)
 };
 
-// Initialize API service when imported
-apiService.init();
+// Authors API
+const authors = {
+  getAll: () => apiClient.get('/authors'),
+  getById: (id) => apiClient.get(`/authors/${id}`),
+  create: (authorData) => apiClient.post('/authors', authorData),
+  update: (id, authorData) => apiClient.put(`/authors/${id}`, authorData),
+  delete: (id) => apiClient.delete(`/authors/${id}`)
+};
 
-export default apiService;
+// Categories API
+const categories = {
+  getAll: () => apiClient.get('/categories'),
+  getById: (id) => apiClient.get(`/categories/${id}`),
+  create: (categoryData) => apiClient.post('/categories', categoryData),
+  update: (id, categoryData) => apiClient.put(`/categories/${id}`, categoryData),
+  delete: (id) => apiClient.delete(`/categories/${id}`)
+};
+
+// Auth API
+const auth = {
+  login: (credentials) => apiClient.post('/auth/login', credentials),
+  register: (userData) => apiClient.post('/auth/register', userData),
+  getProfile: () => apiClient.get('/auth/profile'),
+  requestPasswordReset: (email) => apiClient.post('/auth/forgot-password', email),
+  resetPassword: (resetData) => apiClient.post('/auth/reset-password', resetData)
+};
+
+export default {
+  books,
+  authors,
+  categories,
+  auth
+};

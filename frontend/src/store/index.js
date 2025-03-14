@@ -14,6 +14,12 @@ const store = {
       loading: false,
       error: null,
       notification: null,
+      snackbar: {
+        show: false,
+        text: '',
+        color: 'success',
+        timeout: 3000
+      }
     };
   },
   
@@ -35,6 +41,18 @@ const store = {
     },
     CLEAR_NOTIFICATION(state) {
       state.notification = null;
+    },
+    SET_SNACKBAR(state, snackbar) {
+      if (snackbar === null) {
+        state.snackbar.show = false;
+      } else {
+        state.snackbar = {
+          show: true,
+          text: snackbar.text || '',
+          color: snackbar.color || 'success',
+          timeout: snackbar.timeout || 3000
+        };
+      }
     }
   },
   
@@ -66,6 +84,17 @@ const store = {
           commit('CLEAR_NOTIFICATION');
         }, 5000);
       }
+    },
+
+    showSnackbar({ commit }, options) {
+      commit('SET_SNACKBAR', options);
+      
+      // Auto-hide the snackbar after the timeout
+      if (options && options.timeout !== -1) {
+        setTimeout(() => {
+          commit('SET_SNACKBAR', null);
+        }, options.timeout || 3000);
+      }
     }
   },
   
@@ -74,7 +103,8 @@ const store = {
     isLoading: state => state.loading,
     error: state => state.error,
     notification: state => state.notification,
-    appName: state => state.appName
+    appName: state => state.appName,
+    snackbar: state => state.snackbar
   },
   
   modules: {

@@ -15,6 +15,7 @@ import storeConfig from './store'
 
 // Initialize API service
 import apiService from './services/api.service';
+import toastPlugin from './plugins/toast';
 
 // Create Vuetify instance
 const vuetify = createVuetify({
@@ -66,5 +67,6 @@ setStore(store)
 const app = createApp(App)
 app.use(vuetify)
 app.use(router)
-app.use(store)
+app.use(store) // Mount store first
+app.use(toastPlugin) // Then toast plugin so it can access the store
 app.mount('#app')
