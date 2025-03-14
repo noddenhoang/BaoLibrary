@@ -39,4 +39,4 @@ const currentYear = new Date().getFullYear();
       </div>
     </div>
   </footer>
-</template> 
+</template>

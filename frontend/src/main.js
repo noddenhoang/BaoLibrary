@@ -3,14 +3,13 @@ import '@mdi/font/css/materialdesignicons.css'
 
 import { createApp } from 'vue'
 import { createStore } from 'vuex'
-import { createRouter, createWebHistory } from 'vue-router'
 import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import 'vuetify/styles'
 
 import App from './App.vue'
-import routes from './router'
+import router from './router'
 import storeConfig from './store'
 
 // Create Vuetify instance
@@ -48,12 +47,6 @@ const vuetify = createVuetify({
       }
     }
   }
-})
-
-// Create router instance
-const router = createRouter({
-  history: createWebHistory(),
-  routes
 })
 
 // Create store instance

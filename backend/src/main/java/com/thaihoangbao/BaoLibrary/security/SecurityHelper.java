@@ -1,17 +1,18 @@
 package com.thaihoangbao.BaoLibrary.security;
 
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+
 import com.thaihoangbao.BaoLibrary.entity.Borrowing;
 import com.thaihoangbao.BaoLibrary.entity.LoanDetail;
 import com.thaihoangbao.BaoLibrary.entity.Return;
 import com.thaihoangbao.BaoLibrary.repository.BorrowingRepository;
 import com.thaihoangbao.BaoLibrary.repository.LoanDetailRepository;
 import com.thaihoangbao.BaoLibrary.repository.ReturnRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
-
-import java.util.Optional;
 
 /**
  * Helper class for security-related operations in Spring Security expressions
@@ -27,6 +28,33 @@ public class SecurityHelper {
     
     @Autowired
     private ReturnRepository returnRepository;
+
+    /**
+     * Get the username of the currently authenticated user
+     */
+    public String getCurrentUsername() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        
+        if (authentication != null && authentication.isAuthenticated()) {
+            return authentication.getName();
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Get the user ID of the currently authenticated user
+     */
+    public Integer getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        
+        if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails) {
+            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+            return userDetails.getUserId();
+        }
+        
+        return null;
+    }
 
     /**
      * Check if the current authenticated user matches the given userId
