@@ -27,9 +27,22 @@ api.interceptors.request.use(
 
 // Response interceptor to handle common errors
 api.interceptors.response.use(
-  response => response,
+  response => {
+    console.log('API Success:', response.config.method.toUpperCase(), response.config.url, response.status);
+    return response;
+  },
   error => {
-    const { response } = error;
+    const { response, config } = error;
+    
+    // Log full error details
+    console.error('API Response Error:', {
+      url: config?.url,
+      method: config?.method?.toUpperCase(),
+      status: response?.status,
+      statusText: response?.statusText,
+      data: response?.data,
+      headers: response?.headers
+    });
     
     // Handle token expiration
     if (response && response.status === 401) {
@@ -92,4 +105,4 @@ const apiService = {
   }
 };
 
-export default apiService; 
+export default apiService;

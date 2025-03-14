@@ -64,6 +64,12 @@ const routes = [
     meta: { title: 'Admin Dashboard - Library Management System', requiresAuth: true, admin: true }
   },
   {
+    path: '/admin/books',
+    name: 'BookManagement',
+    component: () => import('../views/admin/BookManagement.vue'),
+    meta: { title: 'Book Management - Library Management System', requiresAuth: true, admin: true }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('../views/NotFound.vue'),
