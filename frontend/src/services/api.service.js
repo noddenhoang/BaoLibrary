@@ -74,12 +74,32 @@ const apiService = {
     getAll: (params) => api.get('/books', { params }),
     getById: (id) => api.get(`/books/${id}`),
     search: (query) => api.get('/books/search', { params: { query } }),
-    getByGenre: (genre) => api.get('/books/genre', { params: { genre } }),
-    getByAuthor: (author) => api.get('/books/author', { params: { author } }),
+    getByCategory: (categoryId, params) => api.get(`/books/category/${categoryId}`, { params }),
+    getByAuthor: (authorId, params) => api.get(`/books/author/${authorId}`, { params }),
     // Admin functions - will be implemented in later increments
     create: (bookData) => api.post('/books', bookData),
     update: (id, bookData) => api.put(`/books/${id}`, bookData),
     delete: (id) => api.delete(`/books/${id}`)
+  },
+  
+  // Categories
+  categories: {
+    getAll: () => api.get('/categories'),
+    getById: (id) => api.get(`/categories/${id}`),
+    // Admin functions
+    create: (categoryData) => api.post('/categories', categoryData),
+    update: (id, categoryData) => api.put(`/categories/${id}`, categoryData),
+    delete: (id) => api.delete(`/categories/${id}`)
+  },
+  
+  // Authors
+  authors: {
+    getAll: () => api.get('/authors'),
+    getById: (id) => api.get(`/authors/${id}`),
+    // Admin functions
+    create: (authorData) => api.post('/authors', authorData),
+    update: (id, authorData) => api.put(`/authors/${id}`, authorData),
+    delete: (id) => api.delete(`/authors/${id}`)
   },
   
   // User borrowing/returns
@@ -98,7 +118,13 @@ const apiService = {
     deleteUser: (id) => api.delete(`/admin/users/${id}`),
     getStats: () => api.get('/admin/stats'),
     getReports: (params) => api.get('/admin/reports', { params })
-  }
+  },
+  
+  // Generic method for any endpoint
+  get: (endpoint, params) => api.get(endpoint, { params }),
+  post: (endpoint, data) => api.post(endpoint, data),
+  put: (endpoint, data) => api.put(endpoint, data),
+  delete: (endpoint) => api.delete(endpoint)
 };
 
 export default apiService;
