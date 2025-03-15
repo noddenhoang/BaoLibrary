@@ -8,11 +8,12 @@
   >
     <div class="book-card-image-container">
       <v-img
-        :src="book.hinhAnhSach || 'https://placehold.co/200x300/e2e8f0/1e293b?text=No+Image'"
+        :src="book.hinhAnhSach || '/placeholder-book.png'"
         :alt="book.tuaSach"
         class="book-card-image"
         height="200"
         cover
+        @error="handleImageError"
       >
         <template v-slot:placeholder>
           <div class="d-flex align-center justify-center fill-height">
@@ -106,6 +107,12 @@ export default {
     toggleFavorite() {
       this.isFavorite = !this.isFavorite;
       // TODO: Implement favorite functionality in later increment
+    },
+    
+    // Handle image loading errors
+    handleImageError(event) {
+      console.warn(`Failed to load image for book: ${this.book.tuaSach}`);
+      event.target.src = '/placeholder-book.png';
     }
   }
 };
@@ -132,4 +139,4 @@ export default {
 .book-card:hover .book-card-image {
   transform: scale(1.05);
 }
-</style> 
+</style>

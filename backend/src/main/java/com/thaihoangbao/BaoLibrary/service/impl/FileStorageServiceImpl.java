@@ -1,18 +1,22 @@
 package com.thaihoangbao.BaoLibrary.service.impl;
 
-import com.thaihoangbao.BaoLibrary.exception.InvalidRequestException;
-import com.thaihoangbao.BaoLibrary.service.FileStorageService;
-import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.UUID;
+
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.thaihoangbao.BaoLibrary.exception.FileStorageException;
+import com.thaihoangbao.BaoLibrary.exception.ResourceNotFoundException;
+import com.thaihoangbao.BaoLibrary.service.FileStorageService;
 
 @Service
 public class FileStorageServiceImpl implements FileStorageService {
@@ -20,43 +24,42 @@ public class FileStorageServiceImpl implements FileStorageService {
     private final Path fileStorageLocation;
     
     public FileStorageServiceImpl() {
-        // Create upload directory if it doesn't exist
-        String uploadDir = System.getProperty("user.home") + File.separator + "library-uploads";
-        this.fileStorageLocation = Paths.get(uploadDir).toAbsolutePath().normalize();
+        // Create the directory if it doesn't exist
+        this.fileStorageLocation = Paths.get("images").toAbsolutePath().normalize();
         
         try {
             Files.createDirectories(this.fileStorageLocation);
-        } catch (IOException ex) {
-            throw new RuntimeException("Could not create the directory for file storage", ex);
+        } catch (Exception ex) {
+            throw new FileStorageException("Could not create the directory where the uploaded files will be stored.", ex);
         }
     }
     
     @Override
     public String storeFile(MultipartFile file) {
-        // Check if the file is empty
-        if (file.isEmpty()) {
-            throw new InvalidRequestException("Failed to store empty file");
-        }
-        
-        // Generate unique filename to prevent overwriting
-        String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
-        String fileExtension = "";
-        
-        int dotIndex = originalFilename.lastIndexOf(".");
-        if (dotIndex > 0) {
-            fileExtension = originalFilename.substring(dotIndex);
-        }
-        
-        String newFilename = UUID.randomUUID().toString() + fileExtension;
+        // Normalize file name
+        String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
         
         try {
-            // Copy file to the target location
-            Path targetLocation = this.fileStorageLocation.resolve(newFilename);
+            // Check if the file's name contains invalid characters
+            if (originalFileName.contains("..")) {
+                throw new FileStorageException("Sorry! Filename contains invalid path sequence " + originalFileName);
+            }
+            
+            // Generate a unique file name to avoid conflicts
+            String fileExtension = "";
+            if (originalFileName.contains(".")) {
+                fileExtension = originalFileName.substring(originalFileName.lastIndexOf("."));
+            }
+            
+            String uniqueFileName = UUID.randomUUID().toString() + fileExtension;
+            
+            // Copy file to the target location (Replacing existing file with the same name)
+            Path targetLocation = this.fileStorageLocation.resolve(uniqueFileName);
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
             
-            return newFilename;
+            return uniqueFileName;
         } catch (IOException ex) {
-            throw new RuntimeException("Failed to store file " + originalFilename, ex);
+            throw new FileStorageException("Could not store file " + originalFileName + ". Please try again!", ex);
         }
     }
     
@@ -64,9 +67,17 @@ public class FileStorageServiceImpl implements FileStorageService {
     public byte[] getFile(String fileName) {
         try {
             Path filePath = this.fileStorageLocation.resolve(fileName).normalize();
-            return Files.readAllBytes(filePath);
+            Resource resource = new UrlResource(filePath.toUri());
+            
+            if (resource.exists()) {
+                return Files.readAllBytes(filePath);
+            } else {
+                throw new ResourceNotFoundException("File not found: " + fileName);
+            }
+        } catch (MalformedURLException ex) {
+            throw new ResourceNotFoundException("File not found: " + fileName, ex);
         } catch (IOException ex) {
-            throw new RuntimeException("File not found: " + fileName, ex);
+            throw new FileStorageException("Could not read file: " + fileName, ex);
         }
     }
 }

@@ -115,6 +115,7 @@
                 height="80"
                 cover
                 class="rounded"
+                @error="handleImageError($event, item)"
               ></v-img>
             </div>
           </template>
@@ -231,9 +232,44 @@
                   <v-text-field
                     v-model="bookDialog.book.hinhAnhSach"
                     label="URL hình ảnh"
-                    hint="Nhập URL hình ảnh của sách"
+                    hint="Nhập URL hình ảnh của sách hoặc tải lên từ máy tính"
                     variant="outlined"
+                    readonly
                   ></v-text-field>
+                  
+                  <div class="d-flex align-center mt-2">
+                    <v-file-input
+                      accept="image/*"
+                      label="Tải ảnh lên"
+                      variant="outlined"
+                      density="compact"
+                      prepend-icon="mdi-camera"
+                      @update:model-value="onFileSelected"
+                      :disabled="bookDialog.loading"
+                      hide-details
+                    ></v-file-input>
+                    
+                    <v-btn
+                      v-if="selectedFile"
+                      color="primary"
+                      class="ml-2"
+                      size="small"
+                      :loading="uploadingImage"
+                      @click="uploadImage"
+                    >
+                      Tải lên
+                    </v-btn>
+                  </div>
+                  
+                  <div v-if="bookDialog.book.hinhAnhSach" class="mt-2">
+                    <v-img
+                      :src="bookDialog.book.hinhAnhSach"
+                      height="100"
+                      width="75"
+                      cover
+                      class="rounded"
+                    ></v-img>
+                  </div>
                 </v-col>
 
                 <v-col cols="12" md="6">
@@ -334,8 +370,8 @@
 </template>
 
 <script>
-import apiService from '@/services/api.service';
 import { debounce } from 'lodash';
+import apiService from '@/services/api.service';
 
 export default {
   name: 'BookManagementPage',
@@ -348,6 +384,8 @@ export default {
       loading: false,
       error: null,
       search: '',
+      selectedFile: null,
+      uploadingImage: false,
       
       // Filters
       filters: {
@@ -364,17 +402,7 @@ export default {
         totalPages: 0
       },
       
-      // Table headers
-      headers: [
-        { title: 'Hình ảnh', key: 'hinhAnhSach', sortable: false, width: '80px' },
-        { title: 'Tên sách', key: 'tuaSach', sortable: true },
-        { title: 'Năm xuất bản', key: 'namXuatBan', sortable: true, width: '150px' },
-        { title: 'Tác giả', key: 'authors', sortable: false },
-        { title: 'Danh mục', key: 'categories', sortable: false },
-        { title: 'Hành động', key: 'actions', sortable: false, align: 'end', width: '120px' }
-      ],
-      
-      // Book dialog
+      // Book Dialog
       bookDialog: {
         show: false,
         isEdit: false,
@@ -382,12 +410,22 @@ export default {
         book: this.getEmptyBookObject()
       },
       
-      // Delete dialog
+      // Delete Dialog
       deleteDialog: {
         show: false,
         loading: false,
         book: null
-      }
+      },
+      
+      // Table Headers
+      headers: [
+        { title: 'Hình ảnh', key: 'hinhAnhSach', sortable: false, width: '80px' },
+        { title: 'Tên sách', key: 'tuaSach', sortable: true },
+        { title: 'Năm xuất bản', key: 'namXuatBan', sortable: true, width: '150px' },
+        { title: 'Tác giả', key: 'authors', sortable: false },
+        { title: 'Danh mục', key: 'categories', sortable: false },
+        { title: 'Thao tác', key: 'actions', sortable: false, align: 'end', width: '120px' }
+      ]
     };
   },
   
@@ -432,7 +470,6 @@ export default {
         this.books = response.data.content;
         this.pagination.totalItems = response.data.totalElements;
         this.pagination.totalPages = response.data.totalPages;
-        
       } catch (error) {
         console.error('Error fetching books:', error);
         this.error = 'Không thể tải danh sách sách. Vui lòng thử lại sau.';
@@ -502,7 +539,6 @@ export default {
         this.bookDialog.isEdit = false;
         this.bookDialog.book = this.getEmptyBookObject();
       }
-      
       this.bookDialog.show = true;
     },
     
@@ -581,6 +617,53 @@ export default {
         authorIds: [],
         categoryIds: []
       };
+    },
+    
+    // Handle file selection
+    onFileSelected(file) {
+      this.selectedFile = file;
+      // Auto-upload when file is selected
+      if (file) {
+        this.uploadImage();
+      }
+    },
+    
+    // Upload image to server
+    async uploadImage() {
+      if (!this.selectedFile) {
+        return;
+      }
+      
+      this.uploadingImage = true;
+      
+      try {
+        // Create form data for file upload
+        const formData = new FormData();
+        formData.append('file', this.selectedFile);
+        
+        // Upload the file to the server
+        const response = await apiService.files.upload(formData);
+        
+        // Update the image URL field with the returned URL
+        if (response.data && response.data.fileDownloadUri) {
+          this.bookDialog.book.hinhAnhSach = response.data.fileDownloadUri;
+          // Show success message
+          this.$toast.success('Tải ảnh lên thành công');
+        }
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        this.$toast.error('Lỗi khi tải ảnh lên: ' + (error.response?.data?.message || error.message));
+      } finally {
+        this.uploadingImage = false;
+        this.selectedFile = null;
+      }
+    },
+    
+    // Handle image loading errors
+    handleImageError(event, item) {
+      console.warn(`Failed to load image for book: ${item.tuaSach}`);
+      // Set a default placeholder image
+      event.target.src = '/placeholder-book.png';
     }
   }
 };

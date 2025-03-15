@@ -49,7 +49,7 @@ const authors = {
   getAll: () => apiClient.get('/authors'),
   getById: (id) => apiClient.get(`/authors/${id}`),
   create: (authorData) => apiClient.post('/authors', authorData),
-  update: (id, authorData) => apiClient.put(`/authors/${id}`, authorData),
+  update: (id, authorData) => apiClient.put(`/authors/${id}`),
   delete: (id) => apiClient.delete(`/authors/${id}`)
 };
 
@@ -58,7 +58,7 @@ const categories = {
   getAll: () => apiClient.get('/categories'),
   getById: (id) => apiClient.get(`/categories/${id}`),
   create: (categoryData) => apiClient.post('/categories', categoryData),
-  update: (id, categoryData) => apiClient.put(`/categories/${id}`, categoryData),
+  update: (id, categoryData) => apiClient.put(`/categories/${id}`),
   delete: (id) => apiClient.delete(`/categories/${id}`)
 };
 
@@ -71,9 +71,21 @@ const auth = {
   resetPassword: (resetData) => apiClient.post('/auth/reset-password', resetData)
 };
 
+// Files API
+const files = {
+  upload: (formData) => apiClient.post('/files/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  }),
+  getDownloadUrl: (fileName) => `${API_URL}/files/download/${fileName}`
+};
+
 export default {
   books,
   authors,
   categories,
-  auth
+  auth,
+  files,
+  client: apiClient
 };

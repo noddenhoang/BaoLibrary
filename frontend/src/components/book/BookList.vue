@@ -12,9 +12,10 @@
             <template v-slot:prepend>
               <v-avatar size="80" rounded>
                 <v-img
-                  :src="book.hinhAnhSach || 'https://placehold.co/200x300/e2e8f0/1e293b?text=No+Image'"
+                  :src="book.hinhAnhSach || '/placeholder-book.png'"
                   :alt="book.tuaSach"
                   cover
+                  @error="handleImageError(book)"
                 ></v-img>
               </v-avatar>
             </template>
@@ -98,6 +99,11 @@ export default {
     toggleFavorite(book) {
       book.isFavorite = !book.isFavorite;
       // TODO: Implement favorite functionality in later increment
+    },
+    // Handle image loading errors
+    handleImageError(book) {
+      console.warn(`Failed to load image for book: ${book.tuaSach}`);
+      event.target.src = '/placeholder-book.png';
     }
   }
 };
@@ -120,4 +126,4 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-</style> 
+</style>
