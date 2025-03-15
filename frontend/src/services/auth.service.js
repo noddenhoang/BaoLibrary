@@ -28,11 +28,45 @@ const authService = {
   },
   
   /**
-   * Get the auth token
+   * Get the auth token and ensure it's valid
    * @returns {string|null} Auth token or null if not authenticated
    */
   getToken() {
-    return store.getters['auth/token'];
+    const token = store.getters['auth/token'];
+    
+    // If token exists but seems invalid, try to refresh it
+    if (token && this.tokenNeedsRefresh()) {
+      this.refreshToken();
+    }
+    
+    return token;
+  },
+  
+  /**
+   * Check if token might need refreshing
+   * Simple implementation - could be improved with actual JWT expiry checking
+   */
+  tokenNeedsRefresh() {
+    // This is a placeholder. In a real app, you would decode the JWT
+    // and check its expiration time
+    return false;
+  },
+  
+  /**
+   * Refresh the authentication token
+   */
+  async refreshToken() {
+    try {
+      // This is a placeholder for actual token refresh logic
+      // In a real app, you would make an API call to refresh the token
+      console.log('Token refresh placeholder');
+      return true;
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      // If refresh fails, logout the user
+      this.logout();
+      return false;
+    }
   },
   
   /**

@@ -85,6 +85,17 @@ const auth = {
           throw new Error('No token received from server');
         }
         
+        // Decode the JWT token to examine its contents (for debugging)
+        try {
+          const base64Url = responseData.token.split('.')[1];
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const decodedToken = JSON.parse(window.atob(base64));
+          console.log('Decoded token:', decodedToken);
+          console.log('Token role:', decodedToken.role);
+        } catch (e) {
+          console.error('Error decoding token:', e);
+        }
+        
         // Save token and user data
         commit('SET_TOKEN', responseData.token);
         commit('SET_USER', { 
@@ -283,6 +294,35 @@ const auth = {
         return false;
       }
       
+      // Optional: Add token expiration check
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const decodedToken = JSON.parse(window.atob(base64));
+        
+        // Check if token is expired
+        const currentTime = Date.now() / 1000;
+        if (decodedToken.exp && decodedToken.exp < currentTime) {
+          console.log('Token expired');
+          commit('LOGOUT');
+          return false;
+        }
+        
+        // Log user role from token for debugging
+        console.log('Role from token:', decodedToken.role);
+        console.log('Role from state:', state.user?.role);
+        
+        // Update user role if needed
+        if (decodedToken.role && user.role !== decodedToken.role) {
+          commit('SET_USER', { 
+            ...user,
+            role: decodedToken.role 
+          });
+        }
+      } catch (e) {
+        console.error('Error decoding or validating token:', e);
+      }
+      
       // Set token in axios default headers
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       return state.isAuthenticated;
@@ -293,8 +333,13 @@ const auth = {
     isAuthenticated: state => state.isAuthenticated,
     user: state => state.user,
     token: state => state.token,
-    isAdmin: state => state.user && state.user.role === 'admin',
-    isManager: state => state.user && (state.user.role === 'manager' || state.user.role === 'admin'),
+    // Fix the role checks to be more robust
+    isAdmin: state => state.user && (state.user.role === 'admin' || state.user.role === 'ADMIN'),
+    isManager: state => {
+      if (!state.user) return false;
+      const role = state.user.role.toLowerCase();
+      return role === 'admin' || role === 'manager';
+    },
     loading: state => state.loading,
     error: state => state.error,
     resetRequestSent: state => state.resetRequestSent,

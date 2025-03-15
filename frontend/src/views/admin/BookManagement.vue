@@ -109,7 +109,7 @@
           <template v-slot:item.hinhAnhSach="{ item }">
             <div class="d-flex align-center py-2">
               <v-img
-                :src="item.hinhAnhSach || '/placeholder-book.png'"
+                :src="getImageUrl(item.hinhAnhSach) || '/placeholder-book.png'"
                 :alt="item.tuaSach"
                 width="60"
                 height="80"
@@ -234,7 +234,7 @@
                     label="URL hình ảnh"
                     hint="Nhập URL hình ảnh của sách hoặc tải lên từ máy tính"
                     variant="outlined"
-                    readonly
+                    :readonly="false"
                   ></v-text-field>
                   
                   <div class="d-flex align-center mt-2">
@@ -434,6 +434,9 @@ export default {
     this.fetchCategories();
     this.fetchAuthors();
     this.fetchBooks();
+    // Add debug info to check auth state
+    console.log('BookManagement created, checking auth status:');
+    apiService.debug.checkAuth();
   },
   
   methods: {
@@ -554,15 +557,23 @@ export default {
       this.error = null; // Clear previous errors
       
       try {
+        // Check for proper authentication
+        if (!this.checkAuthForManagement()) return;
+        
+        console.log('Saving book:', this.bookDialog.book);
+        
+        let response;
         if (this.bookDialog.isEdit) {
           // Update existing book
-          await apiService.books.update(this.bookDialog.book.bookId, this.bookDialog.book);
+          response = await apiService.books.update(this.bookDialog.book.bookId, this.bookDialog.book);
           this.$toast.success('Cập nhật sách thành công!');
         } else {
           // Create new book
-          await apiService.books.create(this.bookDialog.book);
+          response = await apiService.books.create(this.bookDialog.book);
           this.$toast.success('Thêm sách mới thành công!');
         }
+        
+        console.log('Save response:', response);
         
         // Close dialog and refresh books
         this.bookDialog.show = false;
@@ -570,7 +581,20 @@ export default {
         return true; // Indicate success
       } catch (error) {
         console.error('Error saving book:', error);
-        this.error = error.response?.data?.message || 'Không thể lưu thông tin sách. Vui lòng thử lại sau.';
+        
+        // Enhanced error information
+        let errorMessage = 'Không thể lưu thông tin sách. ';
+        if (error.response) {
+          errorMessage += error.response.data?.message || 
+                       `Lỗi status: ${error.response.status}`;
+          console.error('Server response:', error.response.data);
+        } else if (error.request) {
+          errorMessage += 'Không nhận được phản hồi từ máy chủ.';
+        } else {
+          errorMessage += error.message || 'Lỗi không xác định.';
+        }
+        
+        this.error = errorMessage;
         this.$toast.error(this.error);
         return false; // Indicate failure
       } finally {
@@ -590,6 +614,11 @@ export default {
       this.error = null; // Clear previous errors
       
       try {
+        // Check for proper authentication
+        if (!this.checkAuthForManagement()) return;
+        
+        console.log('Deleting book ID:', this.deleteDialog.book.bookId);
+        
         await apiService.books.delete(this.deleteDialog.book.bookId);
         this.$toast.success('Xóa sách thành công!');
         
@@ -599,7 +628,19 @@ export default {
         return true; // Indicate success
       } catch (error) {
         console.error('Error deleting book:', error);
-        this.error = error.response?.data?.message || 'Không thể xóa sách. Vui lòng thử lại sau.';
+        
+        // Enhanced error information
+        let errorMessage = 'Không thể xóa sách. ';
+        if (error.response) {
+          errorMessage += error.response.data?.message || 
+                       `Lỗi status: ${error.response.status}`;
+        } else if (error.request) {
+          errorMessage += 'Không nhận được phản hồi từ máy chủ.';
+        } else {
+          errorMessage += error.message || 'Lỗi không xác định.';
+        }
+        
+        this.error = errorMessage;
         this.$toast.error(this.error);
         return false; // Indicate failure
       } finally {
@@ -637,9 +678,22 @@ export default {
       this.uploadingImage = true;
       
       try {
+        // Check for proper authentication
+        if (!this.checkAuthForManagement()) return;
+        
         // Create form data for file upload
         const formData = new FormData();
         formData.append('file', this.selectedFile);
+        
+        // Get current token from localStorage
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+          throw new Error('Bạn cần đăng nhập để tải ảnh lên');
+        }
+        
+        console.log(`Uploading image "${this.selectedFile.name}" (${Math.round(this.selectedFile.size/1024)}KB)`);
+        console.log('Using token:', token ? 'Token exists' : 'No token found!');
         
         // Upload the file to the server
         const response = await apiService.files.upload(formData);
@@ -647,23 +701,90 @@ export default {
         // Update the image URL field with the returned URL
         if (response.data && response.data.fileDownloadUri) {
           this.bookDialog.book.hinhAnhSach = response.data.fileDownloadUri;
+          
+          // Add the base URL if it's a relative path
+          if (this.bookDialog.book.hinhAnhSach.startsWith('/')) {
+            this.bookDialog.book.hinhAnhSach = window.location.origin + this.bookDialog.book.hinhAnhSach;
+          }
+          
           // Show success message
           this.$toast.success('Tải ảnh lên thành công');
+          console.log('Upload successful, new image URL:', this.bookDialog.book.hinhAnhSach);
         }
       } catch (error) {
         console.error('Error uploading image:', error);
-        this.$toast.error('Lỗi khi tải ảnh lên: ' + (error.response?.data?.message || error.message));
+        let errorMessage = 'Lỗi khi tải ảnh lên: ';
+        
+        if (error.response) {
+          console.error('Upload error response:', error.response);
+          if (error.response.status === 403) {
+            errorMessage += 'Bạn không có quyền tải ảnh lên. Vui lòng kiểm tra đăng nhập và quyền của tài khoản.';
+          } else {
+            errorMessage += error.response.data?.message || `Lỗi máy chủ (${error.response.status})`;
+          }
+        } else if (error.request) {
+          errorMessage += 'Không thể kết nối đến máy chủ';
+        } else {
+          errorMessage += error.message;
+        }
+        
+        this.$toast.error(errorMessage);
       } finally {
         this.uploadingImage = false;
         this.selectedFile = null;
       }
     },
     
+    // Get proper image URL for display
+    getImageUrl(url) {
+      if (!url) return '/placeholder-book.png';
+      
+      // If it's already an absolute URL
+      if (url.match(/^https?:\/\//)) {
+        // For Google Drive URLs, use the proxy
+        if (url.includes('drive.google.com')) {
+          return `${window.location.origin}/api/proxy/image?url=${encodeURIComponent(url)}`;
+        }
+        return url;
+      }
+      
+      // If it's a relative URL starting with /api
+      if (url.startsWith('/api/')) {
+        return `${window.location.origin}${url}`;
+      }
+      
+      return url;
+    },
+    
     // Handle image loading errors
     handleImageError(event, item) {
-      console.warn(`Failed to load image for book: ${item.tuaSach}`);
-      // Set a default placeholder image
-      event.target.src = '/placeholder-book.png';
+      console.warn(`Failed to load image for book: ${item?.tuaSach || 'Unknown'}`);
+      
+      // Set a default placeholder image if event and target exist
+      if (event && event.target) {
+        event.target.src = '/placeholder-book.png';
+      }
+    },
+    
+    // Check authentication and permissions for management operations
+    checkAuthForManagement() {
+      // Check if user is logged in
+      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user'));
+      
+      if (!token || !user) {
+        this.$toast.error('Bạn cần đăng nhập để thực hiện chức năng này');
+        return false;
+      }
+      
+      // Check role
+      const userRole = user.role?.toLowerCase();
+      if (userRole !== 'admin' && userRole !== 'manager') {
+        this.$toast.error('Bạn cần có quyền quản trị hoặc quản lý để thực hiện chức năng này');
+        return false;
+      }
+      
+      return true;
     }
   }
 };

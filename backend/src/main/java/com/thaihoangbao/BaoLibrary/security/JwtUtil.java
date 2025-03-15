@@ -60,6 +60,11 @@ public class JwtUtil {
         return createToken(claims, user.getTaiKhoan());
     }
 
+    // Add a method to extract role from token
+    public String extractRole(String token) {
+        return extractClaim(token, claims -> claims.get("role", String.class));
+    }
+
     private String createToken(Map<String, Object> claims, String subject) {
         return Jwts.builder()
                 .setClaims(claims)

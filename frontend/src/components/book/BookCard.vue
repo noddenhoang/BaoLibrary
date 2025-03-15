@@ -8,7 +8,7 @@
   >
     <div class="book-card-image-container">
       <v-img
-        :src="book.hinhAnhSach || '/placeholder-book.png'"
+        :src="getImageUrl(book.hinhAnhSach)"
         :alt="book.tuaSach"
         class="book-card-image"
         height="200"
@@ -80,7 +80,6 @@
 
 <script>
 export default {
-  name: 'BookCard',
   props: {
     book: {
       type: Object,
@@ -90,7 +89,8 @@ export default {
   data() {
     return {
       hovering: false,
-      isFavorite: false
+      isFavorite: false,
+      imageError: false
     };
   },
   computed: {
@@ -104,15 +104,48 @@ export default {
     }
   },
   methods: {
+    getImageUrl(url) {
+      if (!url || this.imageError) {
+        return '/placeholder-book.png';
+      }
+      
+      // Handle API-hosted images
+      if (url.startsWith('/api/files/download/')) {
+        const baseUrl = window.location.origin;
+        return `${baseUrl}${url}`;
+      }
+      
+      // Handle Google Drive images more robustly
+      if (url.includes('drive.google.com')) {
+        // Extract the file ID if possible
+        let fileId = '';
+        const idMatch = url.match(/[-\w]{25,}/);
+        if (idMatch) {
+          fileId = idMatch[0];
+          return `${window.location.origin}/api/proxy/image?url=${encodeURIComponent(`https://drive.google.com/uc?export=view&id=${fileId}`)}`;
+        } else {
+          // If can't extract ID, use the original URL through proxy
+          return `${window.location.origin}/api/proxy/image?url=${encodeURIComponent(url)}`;
+        }
+      }
+      
+      return url;
+    },
+
     toggleFavorite() {
       this.isFavorite = !this.isFavorite;
       // TODO: Implement favorite functionality in later increment
     },
     
-    // Handle image loading errors
+    // Handle image loading errors - fixed to avoid undefined errors
     handleImageError(event) {
+      this.imageError = true;
       console.warn(`Failed to load image for book: ${this.book.tuaSach}`);
-      event.target.src = '/placeholder-book.png';
+      
+      // Safely handle the event target
+      if (event && event.target) {
+        event.target.src = '/placeholder-book.png';
+      }
     }
   }
 };

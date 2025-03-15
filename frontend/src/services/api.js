@@ -16,6 +16,8 @@ api.interceptors.request.use(
     const token = localStorage.getItem('token');
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
+      // Log header for debugging
+      console.log('Setting Authorization header:', `Bearer ${token.substring(0, 15)}...`);
     }
     return config;
   },
@@ -43,6 +45,14 @@ api.interceptors.response.use(
       data: response?.data,
       headers: response?.headers
     });
+    
+    // Permission denied - handle explicitly
+    if (response && response.status === 403) {
+      console.error('Permission denied: You do not have the required role to perform this action');
+      // Display user-friendly message
+      window._vm && window._vm.$toast && 
+        window._vm.$toast.error('You do not have permission to perform this action. Please contact an administrator.');
+    }
     
     // Handle token expiration
     if (response && response.status === 401) {
@@ -102,6 +112,53 @@ const apiService = {
     deleteUser: (id) => api.delete(`/admin/users/${id}`),
     getStats: () => api.get('/admin/stats'),
     getReports: (params) => api.get('/admin/reports', { params })
+  },
+
+  // Add a debug helper to check authorization status
+  debug: {
+    checkAuth: () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.log('No token found in localStorage');
+        return false;
+      }
+      
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const decodedToken = JSON.parse(window.atob(base64));
+        console.log('Token contents:', decodedToken);
+        console.log('Token expiration:', new Date(decodedToken.exp * 1000).toLocaleString());
+        console.log('Current time:', new Date().toLocaleString());
+        console.log('Role from token:', decodedToken.role);
+        console.log('User ID from token:', decodedToken.userId);
+        return true;
+      } catch (e) {
+        console.error('Error decoding token:', e);
+        return false;
+      }
+    }
+  }
+};
+
+// Add a permission checker helper
+apiService.debug.hasPermission = (requiredRoles) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) return false;
+    
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const decodedToken = JSON.parse(window.atob(base64));
+    const userRole = decodedToken.role || 'member';
+    
+    if (Array.isArray(requiredRoles)) {
+      return requiredRoles.includes(userRole);
+    }
+    return requiredRoles === userRole;
+  } catch (e) {
+    console.error('Error checking permissions:', e);
+    return false;
   }
 };
 

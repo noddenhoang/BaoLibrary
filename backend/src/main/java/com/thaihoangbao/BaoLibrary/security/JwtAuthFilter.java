@@ -38,6 +38,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             jwt = authHeader.substring(7);
             try {
                 username = jwtUtil.extractUsername(jwt);
+                // Log the token and extracted username for debugging
+                logger.info("Processing token for user: " + username);
+                // Also log the role if available
+                try {
+                    String role = jwtUtil.extractRole(jwt);
+                    logger.info("User role from token: " + role);
+                } catch (Exception e) {
+                    logger.error("Error extracting role from token", e);
+                }
             } catch (Exception e) {
                 logger.error("Error extracting username from token", e);
             }
@@ -51,6 +60,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         userDetails, null, userDetails.getAuthorities());
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+                
+                // Log the authorities for debugging
+                logger.info("User authorities: " + userDetails.getAuthorities());
             }
         }
         

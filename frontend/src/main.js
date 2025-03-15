@@ -16,6 +16,7 @@ import storeConfig from './store'
 // Initialize API service
 import apiService from './services/api.service';
 import toastPlugin from './plugins/toast';
+// Remove vue-toastification imports and use our custom toast plugin only
 
 // Create Vuetify instance
 const vuetify = createVuetify({
@@ -69,4 +70,9 @@ app.use(vuetify)
 app.use(router)
 app.use(store) // Mount store first
 app.use(toastPlugin) // Then toast plugin so it can access the store
+// Remove vue-toastification usage
+
+// Make Vue instance globally available for error handling in the API service
+window._vm = app
+
 app.mount('#app')

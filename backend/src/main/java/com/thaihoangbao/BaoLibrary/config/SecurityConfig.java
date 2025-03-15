@@ -44,6 +44,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/books/**").permitAll() // Allow public access to books API
                         .requestMatchers("/api/authors/**").permitAll() // Allow public access to authors API
                         .requestMatchers("/api/categories/**").permitAll() // Allow public access to categories API
+                        .requestMatchers("/api/proxy/**").permitAll() // Allow public access to proxy endpoints
+                        .requestMatchers("/api/health").permitAll() // Allow health checks
                         // Phải xác thực cho các đường dẫn còn lại
                         .anyRequest().authenticated()
                 )

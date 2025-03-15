@@ -25,7 +25,8 @@ public class FileStorageServiceImpl implements FileStorageService {
     
     public FileStorageServiceImpl() {
         // Create the directory if it doesn't exist
-        this.fileStorageLocation = Paths.get("images").toAbsolutePath().normalize();
+        this.fileStorageLocation = Paths.get(System.getProperty("user.dir"), "images")
+            .toAbsolutePath().normalize();
         
         try {
             Files.createDirectories(this.fileStorageLocation);
