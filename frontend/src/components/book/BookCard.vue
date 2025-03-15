@@ -96,11 +96,11 @@ export default {
   computed: {
     authorsList() {
       if (!this.book.authors || this.book.authors.length === 0) return '';
-      if (this.book.authors.length === 1) return this.book.authors[0].authorName;
+      if (this.book.authors.length === 1) return this.book.authors[0].tenTacGia;
       if (this.book.authors.length === 2) {
-        return `${this.book.authors[0].authorName} & ${this.book.authors[1].authorName}`;
+        return `${this.book.authors[0].tenTacGia} & ${this.book.authors[1].tenTacGia}`;
       }
-      return `${this.book.authors[0].authorName} & ${this.book.authors.length - 1} tác giả khác`;
+      return `${this.book.authors[0].tenTacGia} & ${this.book.authors.length - 1} tác giả khác`;
     }
   },
   methods: {

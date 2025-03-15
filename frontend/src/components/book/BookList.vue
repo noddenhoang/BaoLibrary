@@ -90,11 +90,11 @@ export default {
   methods: {
     getAuthorsList(authors) {
       if (authors.length === 0) return 'Không rõ tác giả';
-      if (authors.length === 1) return authors[0].authorName;
+      if (authors.length === 1) return authors[0].tenTacGia;
       if (authors.length === 2) {
-        return `${authors[0].authorName} & ${authors[1].authorName}`;
+        return `${authors[0].tenTacGia} & ${authors[1].tenTacGia}`;
       }
-      return `${authors[0].authorName} & ${authors.length - 1} tác giả khác`;
+      return `${authors[0].tenTacGia} & ${authors.length - 1} tác giả khác`;
     },
     toggleFavorite(book) {
       book.isFavorite = !book.isFavorite;

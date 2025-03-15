@@ -52,7 +52,7 @@
               <v-select
                 v-model="filters.authorId"
                 :items="authors"
-                item-title="authorName"
+                item-title="tenTacGia"
                 item-value="authorId"
                 label="Tác giả"
                 hide-details
@@ -213,4 +213,4 @@ export default {
 .book-filters {
   margin-bottom: 1rem;
 }
-</style> 
+</style>
