@@ -8,6 +8,8 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,7 @@ import com.thaihoangbao.BaoLibrary.service.FileStorageService;
 public class FileStorageServiceImpl implements FileStorageService {
     
     private final Path fileStorageLocation;
+    private static final Logger logger = LoggerFactory.getLogger(FileStorageServiceImpl.class);
     
     public FileStorageServiceImpl() {
         // Create the directory if it doesn't exist
@@ -29,7 +32,14 @@ public class FileStorageServiceImpl implements FileStorageService {
             .toAbsolutePath().normalize();
         
         try {
-            Files.createDirectories(this.fileStorageLocation);
+            logger.info("File storage location: {}", this.fileStorageLocation);
+            
+            if (!Files.exists(fileStorageLocation)) {
+                logger.info("Creating directory: {}", fileStorageLocation);
+                Files.createDirectories(this.fileStorageLocation);
+            } else {
+                logger.info("Directory already exists");
+            }
         } catch (Exception ex) {
             throw new FileStorageException("Could not create the directory where the uploaded files will be stored.", ex);
         }
@@ -39,6 +49,7 @@ public class FileStorageServiceImpl implements FileStorageService {
     public String storeFile(MultipartFile file) {
         // Normalize file name
         String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
+        logger.info("Storing file: {}", originalFileName);
         
         try {
             // Check if the file's name contains invalid characters
@@ -53,10 +64,20 @@ public class FileStorageServiceImpl implements FileStorageService {
             }
             
             String uniqueFileName = UUID.randomUUID().toString() + fileExtension;
+            logger.info("Generated unique filename: {}", uniqueFileName);
             
             // Copy file to the target location (Replacing existing file with the same name)
             Path targetLocation = this.fileStorageLocation.resolve(uniqueFileName);
+            logger.info("Target location: {}", targetLocation);
+            
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+            
+            // Verify file was created
+            if (Files.exists(targetLocation)) {
+                logger.info("File stored successfully at {}", targetLocation);
+            } else {
+                logger.warn("File doesn't exist after copying: {}", targetLocation);
+            }
             
             return uniqueFileName;
         } catch (IOException ex) {
@@ -68,16 +89,28 @@ public class FileStorageServiceImpl implements FileStorageService {
     public byte[] getFile(String fileName) {
         try {
             Path filePath = this.fileStorageLocation.resolve(fileName).normalize();
+            logger.info("Looking for file at path: {}", filePath);
+            
+            if (!Files.exists(filePath)) {
+                logger.warn("File not found: {}", filePath);
+                throw new ResourceNotFoundException("File not found: " + fileName);
+            }
+            
             Resource resource = new UrlResource(filePath.toUri());
+            logger.info("Resource URI: {}", resource.getURI());
             
             if (resource.exists()) {
+                logger.info("File found, reading bytes");
                 return Files.readAllBytes(filePath);
             } else {
+                logger.warn("Resource does not exist: {}", resource.getURI());
                 throw new ResourceNotFoundException("File not found: " + fileName);
             }
         } catch (MalformedURLException ex) {
+            logger.error("MalformedURLException for file: {}", fileName, ex);
             throw new ResourceNotFoundException("File not found: " + fileName, ex);
         } catch (IOException ex) {
+            logger.error("IOException reading file: {}", fileName, ex);
             throw new FileStorageException("Could not read file: " + fileName, ex);
         }
     }

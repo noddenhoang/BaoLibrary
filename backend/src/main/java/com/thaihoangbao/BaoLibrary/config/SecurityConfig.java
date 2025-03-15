@@ -44,15 +44,26 @@ public class SecurityConfig {
                         .requestMatchers("/api/books/**").permitAll() // Allow public access to books API
                         .requestMatchers("/api/authors/**").permitAll() // Allow public access to authors API
                         .requestMatchers("/api/categories/**").permitAll() // Allow public access to categories API
+                        .requestMatchers("/api/files/**").permitAll() // Allow public access to file endpoints
                         .requestMatchers("/api/proxy/**").permitAll() // Allow public access to proxy endpoints
                         .requestMatchers("/api/health").permitAll() // Allow health checks
+                        .requestMatchers("/images/**").permitAll() // Allow direct access to images
+                        .requestMatchers("/static/images/**").permitAll() // Allow access to static images
                         // Phải xác thực cho các đường dẫn còn lại
                         .anyRequest().authenticated()
                 )
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(handler -> handler
+                    .authenticationEntryPoint((request, response, authException) -> {
+                        response.setStatus(401);
+                        response.setContentType("application/json");
+                        response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"" + 
+                           authException.getMessage() + "\", \"path\": \"" + request.getRequestURI() + "\"}");
+                    })
+                );
                 
         return http.build();
     }

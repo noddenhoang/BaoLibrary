@@ -9,7 +9,7 @@ import authors from './modules/authors';
 const store = {
   state() {
     return {
-      appName: 'Hệ Thống Quản Lý Thư Viện',
+      appName: 'THBOOKS',
       darkMode: false,
       loading: false,
       error: null,

@@ -15,6 +15,15 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.Date;
+
 @RestController
 @RequestMapping("/api/files")
 public class FileUploadController {
@@ -42,10 +51,7 @@ public class FileUploadController {
             String fileName = fileStorageService.storeFile(file);
             
             // Create full URL for the file
-            String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
-                    .path("/api/files/download/")
-                    .path(fileName)
-                    .toUriString();
+            String fileDownloadUri = "/api/files/download/" + fileName;
             
             FileUploadResponse response = new FileUploadResponse(
                     fileName,
@@ -86,5 +92,87 @@ public class FileUploadController {
             logger.error("Error downloading file: {}", fileName, e);
             throw e;
         }
+    }
+
+    @GetMapping("/check-image/{fileName}")
+    public ResponseEntity<?> checkImageExists(@PathVariable String fileName) {
+        Path filePath = Paths.get(System.getProperty("user.dir"), "images", fileName);
+        boolean exists = Files.exists(filePath);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("exists", exists);
+        response.put("path", filePath.toString());
+        response.put("fileName", fileName);
+        
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/debug-file-paths")
+    public ResponseEntity<?> debugFilePaths() {
+        Map<String, Object> response = new HashMap<>();
+        
+        Path imagesDir = Paths.get(System.getProperty("user.dir"), "images");
+        response.put("imagesDirectoryExists", Files.exists(imagesDir));
+        response.put("imagesDirectoryPath", imagesDir.toAbsolutePath().toString());
+        response.put("currentRequestPath", "/api/files/debug-file-paths");
+        
+        try {
+            // Create images directory if it doesn't exist
+            if (!Files.exists(imagesDir)) {
+                Files.createDirectories(imagesDir);
+                response.put("directoryCreated", true);
+            }
+            
+            if (Files.exists(imagesDir)) {
+                // List the first 10 files in the images directory
+                List<Map<String, Object>> files = Files.list(imagesDir)
+                    .limit(10)
+                    .map(path -> {
+                        Map<String, Object> fileInfo = new HashMap<>();
+                        fileInfo.put("filename", path.getFileName().toString());
+                        fileInfo.put("fullPath", path.toAbsolutePath().toString());
+                        fileInfo.put("apiPath", "/api/files/download/" + path.getFileName().toString());
+                        fileInfo.put("size", path.toFile().length());
+                        return fileInfo;
+                    })
+                    .collect(Collectors.toList());
+                
+                response.put("sampleFiles", files);
+            }
+            
+            // Add information about endpoint and URL format
+            response.put("downloadEndpoint", "/api/files/download/{fileName}");
+            response.put("exampleUrl", "/api/files/download/" + 
+                (Files.list(imagesDir).findFirst().isPresent() 
+                    ? Files.list(imagesDir).findFirst().get().getFileName().toString() 
+                    : "example.jpg"));
+                    
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Error in debug endpoint", e);
+            response.put("error", e.getMessage());
+            response.put("stackTrace", e.getStackTrace());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+    
+    // Add a new endpoint to handle direct requests to /api/debug-file-paths
+    @RequestMapping(value = "/api/debug-file-paths", method = RequestMethod.GET)
+    public ResponseEntity<?> debugFilePathsAlternate() {
+        logger.info("Direct access to /api/debug-file-paths detected, processing request");
+        return debugFilePaths();
+    }
+
+    // Add a global error handler for this controller
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> handleExceptions(Exception e) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("error", e.getMessage());
+        errorResponse.put("timestamp", new Date());
+        errorResponse.put("path", "/api/files");
+        
+        logger.error("Error in file controller", e);
+        
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 }
