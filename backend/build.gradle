@@ -13,6 +13,15 @@ java {
 	}
 }
 
+// Add these lines to enable parameter names
+compileJava {
+	options.compilerArgs += ['-parameters']
+}
+
+compileTestJava {
+	options.compilerArgs += ['-parameters']
+}
+
 configurations {
 	compileOnly {
 		extendsFrom annotationProcessor
@@ -42,6 +51,12 @@ dependencies {
 	
 	// Sử dụng duy nhất một phiên bản Swagger
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+	
+	// Thêm Cloudinary
+	implementation 'com.cloudinary:cloudinary-http44:1.34.0'
+	
+	// Add this for .env support
+    implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 }
 
 tasks.named('test') {

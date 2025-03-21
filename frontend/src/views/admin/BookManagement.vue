@@ -232,7 +232,7 @@
                   <v-text-field
                     v-model="bookDialog.book.hinhAnhSach"
                     label="URL hình ảnh"
-                    hint="Nhập URL hình ảnh của sách hoặc tải lên từ máy tính"
+                    hint="Nhập URL hình ảnh hoặc tải lên từ máy tính"
                     variant="outlined"
                     :readonly="false"
                   ></v-text-field>
@@ -245,20 +245,18 @@
                       density="compact"
                       prepend-icon="mdi-camera"
                       @update:model-value="onFileSelected"
-                      :disabled="bookDialog.loading"
+                      :loading="uploadingImage"
+                      :disabled="uploadingImage"
                       hide-details
                     ></v-file-input>
                     
-                    <v-btn
-                      v-if="selectedFile"
+                    <v-progress-circular
+                      v-if="uploadingImage"
+                      indeterminate
                       color="primary"
+                      size="24"
                       class="ml-2"
-                      size="small"
-                      :loading="uploadingImage"
-                      @click="uploadImage"
-                    >
-                      Tải lên
-                    </v-btn>
+                    ></v-progress-circular>
                   </div>
                   
                   <div v-if="bookDialog.book.hinhAnhSach" class="mt-2">
@@ -685,27 +683,12 @@ export default {
         const formData = new FormData();
         formData.append('file', this.selectedFile);
         
-        // Get current token from localStorage
-        const token = localStorage.getItem('token');
-        
-        if (!token) {
-          throw new Error('Bạn cần đăng nhập để tải ảnh lên');
-        }
-        
-        console.log(`Uploading image "${this.selectedFile.name}" (${Math.round(this.selectedFile.size/1024)}KB)`);
-        console.log('Using token:', token ? 'Token exists' : 'No token found!');
-        
         // Upload the file to the server
         const response = await apiService.files.upload(formData);
         
         // Update the image URL field with the returned URL
-        if (response.data && response.data.fileDownloadUri) {
-          this.bookDialog.book.hinhAnhSach = response.data.fileDownloadUri;
-          
-          // Add the base URL if it's a relative path
-          if (this.bookDialog.book.hinhAnhSach.startsWith('/')) {
-            this.bookDialog.book.hinhAnhSach = window.location.origin + this.bookDialog.book.hinhAnhSach;
-          }
+        if (response.data && response.data.fileUrl) {
+          this.bookDialog.book.hinhAnhSach = response.data.fileUrl;
           
           // Show success message
           this.$toast.success('Tải ảnh lên thành công');
@@ -713,47 +696,23 @@ export default {
         }
       } catch (error) {
         console.error('Error uploading image:', error);
-        let errorMessage = 'Lỗi khi tải ảnh lên: ';
-        
-        if (error.response) {
-          console.error('Upload error response:', error.response);
-          if (error.response.status === 403) {
-            errorMessage += 'Bạn không có quyền tải ảnh lên. Vui lòng kiểm tra đăng nhập và quyền của tài khoản.';
-          } else {
-            errorMessage += error.response.data?.message || `Lỗi máy chủ (${error.response.status})`;
-          }
-        } else if (error.request) {
-          errorMessage += 'Không thể kết nối đến máy chủ';
-        } else {
-          errorMessage += error.message;
-        }
-        
-        this.$toast.error(errorMessage);
+        this.$toast.error('Lỗi khi tải ảnh lên: ' + (error.response?.data?.error || error.message));
       } finally {
         this.uploadingImage = false;
-        this.selectedFile = null;
       }
     },
     
     // Get proper image URL for display
     getImageUrl(url) {
-      if (!url) return '/placeholder-book.png';
+      if (!url) return '/placeholder-book.jpg';
       
-      // If it's already an absolute URL
+      // Nếu đã là URL Cloudinary, trả về nguyên đường dẫn
       if (url.match(/^https?:\/\//)) {
-        // For Google Drive URLs, use the proxy
-        if (url.includes('drive.google.com')) {
-          return `${window.location.origin}/api/proxy/image?url=${encodeURIComponent(url)}`;
-        }
         return url;
       }
       
-      // If it's a relative URL starting with /api
-      if (url.startsWith('/api/')) {
-        return `${window.location.origin}${url}`;
-      }
-      
-      return url;
+      // Fallback cho placeholder
+      return '/placeholder-book.jpg';
     },
     
     // Handle image loading errors

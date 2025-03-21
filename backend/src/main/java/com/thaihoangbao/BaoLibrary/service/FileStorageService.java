@@ -2,7 +2,8 @@ package com.thaihoangbao.BaoLibrary.service;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Map;
+
 public interface FileStorageService {
-    String storeFile(MultipartFile file);
-    byte[] getFile(String fileName);
+    Map<String, String> uploadFile(MultipartFile file);
 }

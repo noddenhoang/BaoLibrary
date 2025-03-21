@@ -100,8 +100,6 @@ const apiService = {
   // Files service
   files: {
     upload: (formData) => {
-      // Create a special config for file uploads that ensures multipart/form-data content type
-      // and proper authentication headers
       const token = localStorage.getItem('token');
       const config = {
         headers: {
@@ -111,8 +109,7 @@ const apiService = {
       };
       
       return apiClient.post('/files/upload', formData, config);
-    },
-    download: (fileName) => apiClient.get(`/files/download/${fileName}`, { responseType: 'blob' })
+    }
   },
 
   // Debug helper
