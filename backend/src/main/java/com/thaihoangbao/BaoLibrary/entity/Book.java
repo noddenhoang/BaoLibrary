@@ -34,6 +34,9 @@ public class Book {
     @Column(name = "HinhAnhSach")
     private String hinhAnhSach;
     
+    @Column(name = "SoLuong")
+    private Integer soLuong = 0; // Default là 0 nếu không có giá trị
+    
     @ManyToMany
     @JoinTable(
         name = "BOOK_AUTHOR",

@@ -84,15 +84,32 @@
                 <p class="text-body-1">{{ book.moTa }}</p>
               </div>
               
+              <!-- Quantity -->
+              <v-list-item>
+                <template v-slot:prepend>
+                  <v-icon>mdi-bookshelf</v-icon>
+                </template>
+                <v-list-item-title>Số lượng</v-list-item-title>
+                <v-list-item-subtitle>
+                  <v-chip 
+                    :color="book.soLuong > 0 ? 'success' : 'error'"
+                  >
+                    {{ book.soLuong || 0 }} quyển
+                  </v-chip>
+                </v-list-item-subtitle>
+              </v-list-item>
+              
               <!-- Actions -->
               <div class="d-flex flex-wrap gap-2">
                 <v-btn
                   color="primary"
-                  prepend-icon="mdi-book-open-page-variant"
-                  :disabled="!isLoggedIn"
+                  size="large"
+                  prepend-icon="mdi-book-arrow-right"
+                  class="mb-4"
+                  :disabled="book.soLuong <= 0"
                   @click="borrowBook"
                 >
-                  Mượn sách
+                  {{ book.soLuong > 0 ? 'Mượn sách' : 'Hết sách' }}
                 </v-btn>
                 
                 <v-btn

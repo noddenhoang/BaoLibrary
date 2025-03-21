@@ -3,6 +3,7 @@ package com.thaihoangbao.BaoLibrary.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Min;
 import lombok.Data;
 
 import java.util.HashSet;
@@ -25,4 +26,7 @@ public class BookDto {
     private Set<Integer> authorIds = new HashSet<>();
     
     private Set<Integer> categoryIds = new HashSet<>();
+
+    @Min(value = 0, message = "Số lượng không được âm")
+    private Integer soLuong = 0;
 }

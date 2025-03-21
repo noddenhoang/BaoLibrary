@@ -151,6 +151,18 @@
             <span v-else class="text-grey">Chưa phân loại</span>
           </template>
 
+          <!-- Số lượng Column -->
+          <template v-slot:item.soLuong="{ item }">
+            <div class="d-flex align-center">
+              <v-chip
+                :color="item.soLuong > 0 ? 'success' : 'error'"
+                size="small"
+              >
+                {{ item.soLuong }}
+              </v-chip>
+            </div>
+          </template>
+
           <!-- Actions Column -->
           <template v-slot:item.actions="{ item }">
             <div class="d-flex">
@@ -299,6 +311,17 @@
                   ></v-autocomplete>
                 </v-col>
 
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    v-model="bookDialog.book.soLuong"
+                    type="number"
+                    label="Số lượng"
+                    hint="Nhập số lượng sách"
+                    min="0"
+                    variant="outlined"
+                  ></v-text-field>
+                </v-col>
+
                 <v-col cols="12">
                   <v-textarea
                     v-model="bookDialog.book.moTa"
@@ -422,6 +445,7 @@ export default {
         { title: 'Hình ảnh', key: 'hinhAnhSach', sortable: false, width: '80px' },
         { title: 'Tên sách', key: 'tuaSach', sortable: true },
         { title: 'Năm xuất bản', key: 'namXuatBan', sortable: true, width: '150px' },
+        { title: 'Số lượng', key: 'soLuong', sortable: true, width: '120px' },
         { title: 'Tác giả', key: 'authors', sortable: false },
         { title: 'Danh mục', key: 'categories', sortable: false },
         { title: 'Thao tác', key: 'actions', sortable: false, align: 'end', width: '120px' }
@@ -544,6 +568,7 @@ export default {
           moTa: book.moTa,
           namXuatBan: book.namXuatBan,
           hinhAnhSach: book.hinhAnhSach,
+          soLuong: book.soLuong || 0,
           authorIds: book.authors?.map(a => a.authorId) || [],
           categoryIds: book.categories?.map(c => c.categoryId) || []
         };
@@ -665,6 +690,7 @@ export default {
         moTa: '',
         namXuatBan: new Date().getFullYear(),
         hinhAnhSach: '',
+        soLuong: 0,
         authorIds: [],
         categoryIds: []
       };

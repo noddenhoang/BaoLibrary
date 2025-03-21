@@ -43,6 +43,7 @@ public class BookServiceImpl implements BookService {
         book.setMoTa(bookDto.getMoTa());
         book.setNamXuatBan(bookDto.getNamXuatBan());
         book.setHinhAnhSach(bookDto.getHinhAnhSach());
+        book.setSoLuong(bookDto.getSoLuong()); // Thêm dòng này
         
         // Thêm tác giả
         Set<Author> authors = new HashSet<>();
@@ -186,6 +187,7 @@ public class BookServiceImpl implements BookService {
         book.setMoTa(bookDto.getMoTa());
         book.setNamXuatBan(bookDto.getNamXuatBan());
         book.setHinhAnhSach(bookDto.getHinhAnhSach());
+        book.setSoLuong(bookDto.getSoLuong()); // Thêm dòng này
         
         // Cập nhật tác giả
         if (bookDto.getAuthorIds() != null) {
@@ -232,6 +234,7 @@ public class BookServiceImpl implements BookService {
         dto.setMoTa(book.getMoTa());
         dto.setNamXuatBan(book.getNamXuatBan());
         dto.setHinhAnhSach(book.getHinhAnhSach());
+        dto.setSoLuong(book.getSoLuong()); // Thêm dòng này
         
         // Chuyển đổi tác giả
         List<AuthorDto> authorDtos = book.getAuthors().stream()

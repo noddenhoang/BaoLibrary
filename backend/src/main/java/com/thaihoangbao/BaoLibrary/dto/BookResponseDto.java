@@ -10,6 +10,7 @@ public class BookResponseDto {
     private String moTa;
     private Integer namXuatBan;
     private String hinhAnhSach;
+    private Integer soLuong;
     private List<AuthorDto> authors;
     private List<CategoryDto> categories;
 }

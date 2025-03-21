@@ -24,37 +24,11 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Get absolute path to images directory
-        String imagesPath = Paths.get(System.getProperty("user.dir"), "images").toAbsolutePath().toString();
+        // Không cần tạo thư mục images nữa vì đã dùng Cloudinary
+        // Chỉ để lại cấu hình cho các tài nguyên tĩnh khác nếu cần
         
-        // Ensure path ends with separator
-        if (!imagesPath.endsWith(System.getProperty("file.separator"))) {
-            imagesPath += System.getProperty("file.separator");
-        }
-        
-        // Create directory if it doesn't exist
-        try {
-            Files.createDirectories(Paths.get(imagesPath));
-            logger.info("Images directory ensured at: " + imagesPath);
-        } catch (Exception e) {
-            logger.error("Failed to create images directory: " + e.getMessage(), e);
-        }
-        
-        // Configure both access paths
-        registry.addResourceHandler("/images/**")
-                .addResourceLocations("file:" + imagesPath);
-
-        registry.addResourceHandler("/static/images/**")
-                .addResourceLocations("file:" + imagesPath);
-
-        // Make sure the API paths are explicitly handled as non-static resources
-        registry.addResourceHandler("/api/**")
-                .addResourceLocations("classpath:/META-INF/resources/")  
-                .resourceChain(false);
-
-        // Specifically handle the debug endpoint if it's being accessed directly
-        registry.addResourceHandler("/api/debug-file-paths")
-                .addResourceLocations("classpath:/META-INF/resources/")
-                .resourceChain(false);
+        // Thêm cấu hình cho các tài nguyên tĩnh khác ở đây (nếu cần)
+        registry.addResourceHandler("/static/**")
+                .addResourceLocations("classpath:/static/");
     }
 }
