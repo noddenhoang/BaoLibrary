@@ -189,7 +189,7 @@
         <!-- Pagination -->
         <v-card-actions class="justify-center pa-4">
           <v-pagination
-            v-model="pagination.pageNo"
+            v-model="pagination.currentPage"
             :length="pagination.totalPages"
             @update:model-value="handlePageChange"
           ></v-pagination>
@@ -395,7 +395,8 @@ export default {
       
       // Pagination
       pagination: {
-        pageNo: 0,
+        pageNo: 0,          // Cho backend (0-based)
+        currentPage: 1,     // Cho frontend (1-based)
         pageSize: 10,
         totalItems: 0,
         totalPages: 0
@@ -440,6 +441,7 @@ export default {
   
   methods: {
     async fetchBooks() {
+      console.log(`Fetching books: backend pageNo=${this.pagination.pageNo}, frontend page=${this.pagination.currentPage}`);
       this.loading = true;
       this.error = null;
       
@@ -472,6 +474,11 @@ export default {
         this.books = response.data.content;
         this.pagination.totalItems = response.data.totalElements;
         this.pagination.totalPages = response.data.totalPages;
+        
+        // Đảm bảo currentPage và pageNo đồng bộ
+        if (this.pagination.currentPage !== this.pagination.pageNo + 1) {
+          this.pagination.currentPage = this.pagination.pageNo + 1;
+        }
       } catch (error) {
         console.error('Error fetching books:', error);
         this.error = 'Không thể tải danh sách sách. Vui lòng thử lại sau.';
@@ -512,11 +519,15 @@ export default {
         search: ''
       };
       this.pagination.pageNo = 0;
+      this.pagination.currentPage = 1;
       this.fetchBooks();
     },
     
     handlePageChange(page) {
-      this.pagination.pageNo = page - 1; // Convert from 1-based to 0-based
+      console.log(`Page changed: frontend page=${page}`);
+      // Convert từ 1-based (frontend) sang 0-based (backend)
+      this.pagination.pageNo = page - 1;
+      this.pagination.currentPage = page;
       this.fetchBooks();
       // Scroll to top
       window.scrollTo({ top: 0, behavior: 'smooth' });
