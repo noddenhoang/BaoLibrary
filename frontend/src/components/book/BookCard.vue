@@ -107,47 +107,25 @@ export default {
     getImageUrl(url) {
       if (!url || this.imageError) {
         console.log('Sử dụng ảnh placeholder do không có URL hoặc có lỗi');
-        return '/placeholder-book.png';
+        return '/placeholder-book.jpg';
       }
       
-      console.log('URL gốc:', url);
-      
-      // Trường hợp 1: Nếu URL là UUID của file (hình dạng: 123e4567-e89b-12d3-a456-426614174000.jpg)
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.[a-z]+$/i;
-      if (uuidRegex.test(url)) {
-        const apiUrl = `${window.location.origin}/api/files/download/${url}`;
-        console.log('Phát hiện UUID, sử dụng API endpoint:', apiUrl);
-        return apiUrl;
-      }
-
-      // Trường hợp 2: Nếu đường dẫn có chứa 'images/'
-      if (url.includes('images/')) {
-        const fileName = url.split('/').pop(); // Lấy tên file từ đường dẫn
-        const apiUrl = `${window.location.origin}/api/files/download/${fileName}`;
-        console.log('Phát hiện đường dẫn images/, chuyển đổi thành:', apiUrl);
-        return apiUrl;
+      // Nếu đã là URL https (Cloudinary), sử dụng trực tiếp
+      if (url.match(/^https?:\/\//)) {
+        return url;
       }
       
-      // Trường hợp 3: Nếu đã là URL API download
-      if (url.startsWith('/api/files/download/')) {
-        const fullUrl = `${window.location.origin}${url}`;
-        console.log('URL API đã có sẵn, sử dụng:', fullUrl);
-        return fullUrl;
-      }
-      
-      // Trường hợp 4: Google Drive
+      // Trường hợp: Google Drive
       if (url.includes('drive.google.com')) {
         // Extract the file ID if possible
         const idMatch = url.match(/[-\w]{25,}/);
         if (idMatch) {
           const fileId = idMatch[0];
-          const proxyUrl = `${window.location.origin}/api/proxy/image?url=${encodeURIComponent(`https://drive.google.com/uc?export=view&id=${fileId}`)}`;
-          console.log('URL Google Drive, sử dụng proxy:', proxyUrl);
-          return proxyUrl;
+          return `https://drive.google.com/uc?export=view&id=${fileId}`;
         }
       }
       
-      console.log('Trả về URL gốc:', url);
+      // Fallback - trả về URL gốc
       return url;
     },
 
@@ -156,14 +134,12 @@ export default {
       // TODO: Implement favorite functionality in later increment
     },
     
-    // Handle image loading errors - fixed to avoid undefined errors
     handleImageError(event) {
       this.imageError = true;
       console.warn(`Failed to load image for book: ${this.book.tuaSach}`);
       
-      // Safely handle the event target
       if (event && event.target) {
-        event.target.src = '/placeholder-book.png';
+        event.target.src = '/placeholder-book.jpg';
       }
     }
   }

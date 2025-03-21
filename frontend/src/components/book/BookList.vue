@@ -103,7 +103,7 @@ export default {
     // Handle image loading errors
     handleImageError(book) {
       console.warn(`Failed to load image for book: ${book.tuaSach}`);
-      event.target.src = '/placeholder-book.png';
+      event.target.src = '/placeholder-book.jpg';
     }
   }
 };

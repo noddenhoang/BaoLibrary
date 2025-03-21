@@ -39,11 +39,12 @@
             <!-- Book Cover -->
             <v-col cols="12" sm="4" md="3" class="pa-4">
               <v-img
-                :src="book.hinhAnhSach || '/placeholder-book.png'"
+                :src="book.hinhAnhSach || '/placeholder-book.jpg'"
                 :alt="book.tuaSach"
                 height="400"
                 class="rounded"
                 cover
+                @error="handleImageError"
               ></v-img>
             </v-col>
             
@@ -166,12 +167,25 @@ export default {
       this.error = null;
       
       try {
-        this.book = await this.fetchBookById(this.bookId);
+        // Đảm bảo bookId là một số nguyên
+        const bookId = parseInt(this.bookId);
+        if (isNaN(bookId)) {
+          throw new Error('ID sách không hợp lệ');
+        }
+        
+        this.book = await this.fetchBookById(bookId);
       } catch (error) {
         console.error('Error fetching book:', error);
         this.error = 'Không thể tải thông tin sách. Vui lòng thử lại sau.';
       } finally {
         this.loading = false;
+      }
+    },
+    
+    handleImageError(event) {
+      console.warn(`Failed to load image for book: ${this.book?.tuaSach}`);
+      if (event && event.target) {
+        event.target.src = '/placeholder-book.jpg';
       }
     },
     

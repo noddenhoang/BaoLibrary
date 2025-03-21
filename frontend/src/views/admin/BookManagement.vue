@@ -232,9 +232,10 @@
                   <v-text-field
                     v-model="bookDialog.book.hinhAnhSach"
                     label="URL hình ảnh"
-                    hint="Nhập URL hình ảnh hoặc tải lên từ máy tính"
+                    hint="URL hình ảnh trên Cloudinary (tự động cập nhật khi tải lên)"
                     variant="outlined"
-                    :readonly="false"
+                    readonly
+                    disabled
                   ></v-text-field>
                   
                   <div class="d-flex align-center mt-2">
