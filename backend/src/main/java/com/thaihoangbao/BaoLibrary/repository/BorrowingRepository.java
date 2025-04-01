@@ -30,6 +30,8 @@ public interface BorrowingRepository extends JpaRepository<Borrowing, Integer> {
     long countByUserUserId(Integer userId);
     
     // Find active borrowings (with at least one non-returned book)
-    @Query("SELECT DISTINCT b FROM Borrowing b JOIN b.loanDetails ld WHERE ld.returnDate IS NULL AND b.user.userId = :userId")
+    @Query("SELECT b FROM Borrowing b JOIN b.loanDetails ld WHERE b.user.userId = :userId AND ld.returnDate IS NULL")
     List<Borrowing> findActiveBorrowingsByUserId(@Param("userId") Integer userId);
+
+    long countByBorrowDateBetween(Date startDate, Date endDate);
 }

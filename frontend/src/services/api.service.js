@@ -79,6 +79,30 @@ const apiService = {
     delete: (id) => apiClient.delete(`/books/${id}`)
   },
 
+  // Borrowings API
+  borrowings: {
+    // Tạo phiếu mượn mới
+    create: (borrowingData) => apiClient.post('/borrowings', borrowingData),
+    // Lấy phiếu mượn theo ID
+    getById: (id) => apiClient.get(`/borrowings/${id}`),
+    // Lấy danh sách phiếu mượn đang hoạt động của người dùng
+    getActiveBorrowings: (userId) => apiClient.get(`/borrowings/user/${userId}/active`),
+    // Lấy lịch sử mượn sách của người dùng
+    getBorrowingHistory: (userId) => apiClient.get(`/borrowings/user/${userId}`),
+    // Kiểm tra khả năng mượn sách
+    checkAvailability: (bookId, branchId) => apiClient.get('/borrowings/check-availability', { 
+      params: { bookId, branchId } 
+    }),
+    // Kiểm tra hạn mức mượn sách
+    checkLimit: (userId) => apiClient.get('/borrowings/check-limit', { 
+      params: { userId } 
+    }),
+    // Tính phí thuê sách
+    calculateRentalFee: (rentalDays) => apiClient.get('/borrowings/calculate-fee', {
+      params: { rentalDays }
+    })
+  },
+
   // Authors API
   authors: {
     getAll: () => apiClient.get('/authors'),

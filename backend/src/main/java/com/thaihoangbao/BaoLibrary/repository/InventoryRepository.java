@@ -17,32 +17,45 @@ import com.thaihoangbao.BaoLibrary.entity.Inventory.InventoryId;
 @Repository
 public interface InventoryRepository extends JpaRepository<Inventory, InventoryId> {
     
-    // Find by book and branch
-    Optional<Inventory> findByBookAndBranch(Book book, Branch branch);
+    // Tìm tất cả inventory theo sách
+    List<Inventory> findByBook(Book book);
     
-    // Find by book ID and branch ID
-    Optional<Inventory> findByBookBookIdAndBranchBranchId(Integer bookId, Integer branchId);
+    // Tìm tất cả inventory theo chi nhánh
+    List<Inventory> findByBranch(Branch branch);
     
-    // Find all inventory for a specific book
-    List<Inventory> findByBookBookId(Integer bookId);
+    // Tìm inventory theo sách và chi nhánh
+    @Query("SELECT i FROM Inventory i WHERE i.book.bookId = :bookId AND i.branch.branchId = :branchId")
+    Optional<Inventory> findByBookIdAndBranchId(@Param("bookId") Integer bookId, @Param("branchId") Integer branchId);
     
-    // Find all inventory for a specific branch
-    List<Inventory> findByBranchBranchId(Integer branchId);
+    // Tìm theo BookId
+    @Query("SELECT i FROM Inventory i WHERE i.book.bookId = :bookId")
+    List<Inventory> findByBookBookId(@Param("bookId") Integer bookId);
     
-    // Find books with available copies at a branch
-    List<Inventory> findByBranchBranchIdAndAvailableCopiesGreaterThan(Integer branchId, Integer minAvailable);
+    // Tìm theo BookId và BranchId
+    @Query("SELECT i FROM Inventory i WHERE i.book.bookId = :bookId AND i.branch.branchId = :branchId")
+    Optional<Inventory> findByBookBookIdAndBranchBranchId(@Param("bookId") Integer bookId, @Param("branchId") Integer branchId);
     
-    // Update available copies
+    // Giảm số lượng sách trong kho
+    @Modifying
+    @Query("UPDATE Inventory i SET i.availableCopies = i.availableCopies - :amount WHERE i.book.bookId = :bookId AND i.branch.branchId = :branchId AND i.availableCopies >= :amount")
+    int decreaseQuantity(@Param("bookId") Integer bookId, @Param("branchId") Integer branchId, @Param("amount") Integer amount);
+    
+    // Tăng số lượng sách trong kho
+    @Modifying
+    @Query("UPDATE Inventory i SET i.availableCopies = i.availableCopies + :amount WHERE i.book.bookId = :bookId AND i.branch.branchId = :branchId")
+    int increaseQuantity(@Param("bookId") Integer bookId, @Param("branchId") Integer branchId, @Param("amount") Integer amount);
+    
+    // Để tương thích với code cũ
     @Modifying
     @Query("UPDATE Inventory i SET i.availableCopies = i.availableCopies - :quantity WHERE i.book.bookId = :bookId AND i.branch.branchId = :branchId AND i.availableCopies >= :quantity")
     int decreaseAvailableCopies(@Param("bookId") Integer bookId, @Param("branchId") Integer branchId, @Param("quantity") Integer quantity);
     
-    // Increase available copies (for returns)
+    // Để tương thích với code cũ
     @Modifying
     @Query("UPDATE Inventory i SET i.availableCopies = i.availableCopies + :quantity WHERE i.book.bookId = :bookId AND i.branch.branchId = :branchId")
     int increaseAvailableCopies(@Param("bookId") Integer bookId, @Param("branchId") Integer branchId, @Param("quantity") Integer quantity);
     
-    // Check if a book is available at a branch
-    @Query("SELECT CASE WHEN COUNT(i) > 0 THEN true ELSE false END FROM Inventory i WHERE i.book.bookId = :bookId AND i.branch.branchId = :branchId AND i.availableCopies > 0")
+    // Kiểm tra sách có sẵn tại chi nhánh
+    @Query("SELECT CASE WHEN COUNT(i) > 0 AND i.availableCopies > 0 THEN true ELSE false END FROM Inventory i WHERE i.book.bookId = :bookId AND i.branch.branchId = :branchId")
     boolean isBookAvailableAtBranch(@Param("bookId") Integer bookId, @Param("branchId") Integer branchId);
 } 

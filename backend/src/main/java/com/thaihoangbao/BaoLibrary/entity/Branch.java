@@ -28,4 +28,8 @@ public class Branch {
     @ManyToOne
     @JoinColumn(name = "ManagerID")
     private User manager;
+
+    public String getBranchName() {
+        return this.tenChiNhanh;
+    }
 }

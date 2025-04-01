@@ -1,11 +1,12 @@
 // Import store modules
 import auth from './modules/auth';
 import books from './modules/books';
-import users from './modules/users';
+import borrowings from './modules/borrowings';
 import categories from './modules/categories';
 import authors from './modules/authors';
 import branches from './modules/branches';
 import inventory from './modules/inventory';
+import notifications from './modules/notifications';
 
 // Root store configuration
 const store = {
@@ -16,6 +17,7 @@ const store = {
       loading: false,
       error: null,
       notification: null,
+      sidebarOpen: true,
       snackbar: {
         show: false,
         text: '',
@@ -44,6 +46,12 @@ const store = {
     CLEAR_NOTIFICATION(state) {
       state.notification = null;
     },
+    SET_SIDEBAR_STATE(state, isOpen) {
+      state.sidebarOpen = isOpen;
+    },
+    TOGGLE_SIDEBAR(state) {
+      state.sidebarOpen = !state.sidebarOpen;
+    },
     SET_SNACKBAR(state, snackbar) {
       if (snackbar === null) {
         state.snackbar.show = false;
@@ -63,6 +71,14 @@ const store = {
       const newMode = !state.darkMode;
       localStorage.setItem('darkMode', newMode ? 'true' : 'false');
       commit('SET_DARK_MODE', newMode);
+    },
+    
+    toggleSidebar({ commit }) {
+      commit('TOGGLE_SIDEBAR');
+    },
+    
+    setSidebarState({ commit }, isOpen) {
+      commit('SET_SIDEBAR_STATE', isOpen);
     },
     
     setLoading({ commit }, isLoading) {
@@ -106,17 +122,19 @@ const store = {
     error: state => state.error,
     notification: state => state.notification,
     appName: state => state.appName,
+    isSidebarOpen: state => state.sidebarOpen,
     snackbar: state => state.snackbar
   },
   
   modules: {
     auth,
     books,
-    users,
+    borrowings,
     categories,
     authors,
     branches,
-    inventory
+    inventory,
+    notifications
   }
 };
 

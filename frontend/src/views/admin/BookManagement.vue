@@ -456,6 +456,7 @@ export default {
       loading: false,
       error: null,
       search: '',
+      searchTimeout: null,
       selectedFile: null,
       uploadingImage: false,
       branchQuantities: {}, // Lưu số lượng sách theo từng chi nhánh
@@ -511,6 +512,14 @@ export default {
   methods: {
     ...mapActions('branches', ['fetchBranches']),
     ...mapActions('inventory', ['fetchInventoriesByBookId', 'fetchInventoriesDirectly']),
+    
+    // Thêm phương thức debouncedSearch
+    debouncedSearch() {
+      clearTimeout(this.searchTimeout);
+      this.searchTimeout = setTimeout(() => {
+        this.handleSearchChange();
+      }, 500);
+    },
     
     // Format text in the editor
     formatText(command) {

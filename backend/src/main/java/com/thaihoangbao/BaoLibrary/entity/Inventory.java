@@ -37,6 +37,15 @@ public class Inventory {
     @Column(name = "SoLuongHienCo")
     private Integer availableCopies;
     
+    // Thêm phương thức để tương thích với code đã viết
+    public Integer getQuantity() {
+        return this.availableCopies;
+    }
+    
+    public void setQuantity(Integer quantity) {
+        this.availableCopies = quantity;
+    }
+    
     // Embedded composite key class
     @Embeddable
     @Data

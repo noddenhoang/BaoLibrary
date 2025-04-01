@@ -1,5 +1,6 @@
 package com.thaihoangbao.BaoLibrary.service;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -43,4 +44,11 @@ public interface BorrowingService {
      * Check if a book is available for borrowing
      */
     boolean isBookAvailableForBorrowing(Integer bookId, Integer branchId);
+    
+    /**
+     * Tính phí thuê sách dựa trên số ngày thuê
+     * @param rentalDays Số ngày thuê
+     * @return Phí thuê sách
+     */
+    BigDecimal calculateRentalFee(Integer rentalDays);
 }

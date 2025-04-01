@@ -1,5 +1,6 @@
 package com.thaihoangbao.BaoLibrary.controller;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -87,6 +88,18 @@ public class BorrowingController {
     public ResponseEntity<Boolean> checkUserBorrowingLimit(@RequestParam Integer userId) {
         boolean hasReachedLimit = borrowingService.hasUserReachedMaximumAllowedBorrowings(userId);
         return ResponseEntity.ok(hasReachedLimit);
+    }
+    
+    /**
+     * Tính giá thuê sách trước khi mượn
+     */
+    @GetMapping("/calculate-fee")
+    public ResponseEntity<BigDecimal> calculateRentalFee(@RequestParam Integer rentalDays) {
+        if (rentalDays <= 0) {
+            return ResponseEntity.badRequest().build();
+        }
+        BigDecimal rentalFee = borrowingService.calculateRentalFee(rentalDays);
+        return ResponseEntity.ok(rentalFee);
     }
     
     /**

@@ -1,5 +1,6 @@
 package com.thaihoangbao.BaoLibrary.service.impl;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -289,19 +290,25 @@ public class BookServiceImpl implements BookService {
         dto.setCategories(categoryDtos);
         
         // Thêm thông tin số lượng sách theo chi nhánh
-        List<InventoryDto> inventoryDtos = inventoryRepository.findByBookBookId(book.getBookId())
-            .stream()
-            .map(inventory -> {
-                InventoryDto inventoryDto = new InventoryDto();
-                inventoryDto.setBookId(inventory.getBook().getBookId());
-                inventoryDto.setBranchId(inventory.getBranch().getBranchId());
-                inventoryDto.setTenChiNhanh(inventory.getBranch().getTenChiNhanh());
-                inventoryDto.setTongSoBan(inventory.getTotalCopies());
-                inventoryDto.setSoLuongHienCo(inventory.getAvailableCopies());
-                return inventoryDto;
-            })
-            .collect(Collectors.toList());
-        dto.setInventories(inventoryDtos);
+        try {
+            List<InventoryDto> inventoryDtos = inventoryRepository.findByBookBookId(book.getBookId())
+                .stream()
+                .map(inventory -> {
+                    InventoryDto inventoryDto = new InventoryDto();
+                    inventoryDto.setBookId(inventory.getBook().getBookId());
+                    inventoryDto.setBranchId(inventory.getBranch().getBranchId());
+                    inventoryDto.setTenChiNhanh(inventory.getBranch().getTenChiNhanh());
+                    inventoryDto.setTongSoBan(inventory.getTotalCopies());
+                    inventoryDto.setSoLuongHienCo(inventory.getAvailableCopies());
+                    return inventoryDto;
+                })
+                .collect(Collectors.toList());
+            dto.setInventories(inventoryDtos);
+        } catch (Exception e) {
+            // Xử lý trường hợp không lấy được inventory
+            dto.setInventories(new ArrayList<>());
+            System.err.println("Lỗi khi lấy inventory cho sách ID " + book.getBookId() + ": " + e.getMessage());
+        }
         
         return dto;
     }
@@ -312,35 +319,45 @@ public class BookServiceImpl implements BookService {
      * @param inventories Danh sách thông tin số lượng theo chi nhánh
      */
     private void updateInventories(Integer bookId, List<InventoryDto> inventories) {
-        Book book = bookRepository.findById(bookId)
-            .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sách với ID: " + bookId));
-        
-        for (InventoryDto inventoryDto : inventories) {
-            // Đảm bảo bookId đúng
-            inventoryDto.setBookId(bookId);
+        try {
+            Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sách với ID: " + bookId));
             
-            Branch branch = branchRepository.findById(inventoryDto.getBranchId())
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy chi nhánh với ID: " + inventoryDto.getBranchId()));
-            
-            // Tìm inventory tương ứng hoặc tạo mới
-            Inventory inventory = inventoryRepository.findByBookBookIdAndBranchBranchId(bookId, inventoryDto.getBranchId())
-                .orElse(new Inventory());
-            
-            if (inventory.getId() == null) {
-                inventory.setId(new Inventory.InventoryId(inventoryDto.getBranchId(), bookId));
-                inventory.setBook(book);
-                inventory.setBranch(branch);
+            for (InventoryDto inventoryDto : inventories) {
+                // Đảm bảo bookId đúng
+                inventoryDto.setBookId(bookId);
+                
+                Branch branch = branchRepository.findById(inventoryDto.getBranchId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy chi nhánh với ID: " + inventoryDto.getBranchId()));
+                
+                // Tìm inventory tương ứng hoặc tạo mới
+                Inventory inventory;
+                try {
+                    inventory = inventoryRepository.findByBookBookIdAndBranchBranchId(bookId, inventoryDto.getBranchId())
+                        .orElse(new Inventory());
+                    
+                    if (inventory.getId() == null) {
+                        inventory.setId(new Inventory.InventoryId(inventoryDto.getBranchId(), bookId));
+                        inventory.setBook(book);
+                        inventory.setBranch(branch);
+                    }
+                    
+                    // Cập nhật số lượng
+                    inventory.setTotalCopies(inventoryDto.getTongSoBan());
+                    inventory.setAvailableCopies(inventoryDto.getSoLuongHienCo());
+                    
+                    inventoryRepository.save(inventory);
+                } catch (Exception e) {
+                    System.err.println("Lỗi khi cập nhật inventory cho sách ID " + bookId + 
+                                      " tại chi nhánh ID " + inventoryDto.getBranchId() + ": " + e.getMessage());
+                }
             }
             
-            // Cập nhật số lượng
-            inventory.setTotalCopies(inventoryDto.getTongSoBan());
-            inventory.setAvailableCopies(inventoryDto.getSoLuongHienCo());
-            
-            inventoryRepository.save(inventory);
+            // Cập nhật tổng số lượng sách
+            updateTotalBookQuantity(bookId);
+        } catch (Exception e) {
+            System.err.println("Lỗi khi cập nhật inventory cho sách ID " + bookId + ": " + e.getMessage());
         }
-        
-        // Cập nhật tổng số lượng sách
-        updateTotalBookQuantity(bookId);
     }
 
     /**
@@ -348,17 +365,28 @@ public class BookServiceImpl implements BookService {
      * @param bookId ID của sách
      */
     private void updateTotalBookQuantity(Integer bookId) {
-        Book book = bookRepository.findById(bookId)
-            .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sách với ID: " + bookId));
-        
-        // Tính tổng số lượng từ tất cả các chi nhánh
-        Integer totalQuantity = inventoryRepository.findByBookBookId(bookId)
-            .stream()
-            .mapToInt(Inventory::getAvailableCopies)
-            .sum();
-        
-        // Cập nhật số lượng sách
-        book.setSoLuong(totalQuantity);
-        bookRepository.save(book);
+        try {
+            Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sách với ID: " + bookId));
+            
+            // Tính tổng số lượng từ tất cả các chi nhánh
+            Integer totalQuantity = 0;
+            try {
+                totalQuantity = inventoryRepository.findByBookBookId(bookId)
+                    .stream()
+                    .mapToInt(Inventory::getAvailableCopies)
+                    .sum();
+            } catch (Exception e) {
+                System.err.println("Lỗi khi tính tổng số lượng sách cho ID " + bookId + ": " + e.getMessage());
+                // Giữ nguyên số lượng hiện tại nếu có lỗi
+                totalQuantity = book.getSoLuong();
+            }
+            
+            // Cập nhật số lượng sách
+            book.setSoLuong(totalQuantity);
+            bookRepository.save(book);
+        } catch (Exception e) {
+            System.err.println("Lỗi khi cập nhật tổng số lượng sách cho ID " + bookId + ": " + e.getMessage());
+        }
     }
 }

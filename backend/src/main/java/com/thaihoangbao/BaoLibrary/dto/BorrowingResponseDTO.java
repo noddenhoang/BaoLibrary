@@ -1,5 +1,6 @@
 package com.thaihoangbao.BaoLibrary.dto;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -17,6 +18,7 @@ public class BorrowingResponseDTO {
     private Integer branchId;
     private String branchName;
     private Date borrowDate;
+    private BigDecimal totalRentalFee;
     private List<BorrowingDetailResponseDTO> borrowingDetails;
     
     @Data
@@ -26,6 +28,9 @@ public class BorrowingResponseDTO {
         private Integer loanDetailId;
         private Integer bookId;
         private String bookTitle;
+        private Integer rentalDays;
+        private BigDecimal rentalFee;
+        private Date expectedReturnDate;
         private Date dueDate;
         private Date returnDate; // null if not yet returned
     }

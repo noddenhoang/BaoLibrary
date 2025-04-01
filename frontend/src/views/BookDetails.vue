@@ -78,96 +78,100 @@
                 <span class="font-weight-medium">Năm xuất bản:</span> {{ book.namXuatBan }}
               </p>
               
-              <!-- Quantity -->
-              <p class="text-body-1 mb-4">
-                <span class="font-weight-medium">Số lượng có sẵn:</span> 
-                <v-chip
-                  :color="book.soLuong > 0 ? 'success' : 'error'"
-                  variant="outlined"
-                  class="ml-2"
-                >
-                  {{ book.soLuong > 0 ? book.soLuong : 'Hết sách' }}
-                </v-chip>
-              </p>
-              
-              <!-- Description -->
-              <div class="mb-6" v-if="book.moTa">
-                <h3 class="text-h6 font-weight-medium mb-2">Mô tả</h3>
-                <div class="text-body-1 formatted-description" v-html="formatDescription(book.moTa)"></div>
+              <!-- Description - Thêm phần hiển thị mô tả sách -->
+              <div v-if="book.moTa" class="my-4">
+                <h3 class="text-subtitle-1 font-weight-medium mb-2">Mô tả sách</h3>
+                <div class="formatted-description pa-3 bg-grey-lighten-4 rounded" v-html="formatDescription(book.moTa)"></div>
               </div>
               
-              <!-- Availability by Branch -->
-              <div v-if="book.inventories && book.inventories.length > 0" class="mb-6">
-                <h3 class="text-h6 font-weight-medium mb-2">Tình trạng sách theo chi nhánh</h3>
-                <v-list density="compact" border rounded>
-                  <v-list-item
-                    v-for="inventory in book.inventories"
-                    :key="`${inventory.bookId}-${inventory.branchId}`"
-                    :title="inventory.tenChiNhanh"
-                    :subtitle="inventory.soLuongHienCo > 0 ? `Còn ${inventory.soLuongHienCo} cuốn` : 'Hết sách'"
-                  >
-                    <template v-slot:prepend>
-                      <v-icon 
-                        :color="inventory.soLuongHienCo > 0 ? 'success' : 'error'"
-                        class="mr-2"
-                      >
-                        {{ inventory.soLuongHienCo > 0 ? 'mdi-check-circle' : 'mdi-close-circle' }}
-                      </v-icon>
-                    </template>
-                    
-                    <template v-slot:append>
-                      <v-btn
-                        v-if="inventory.soLuongHienCo > 0 && isLoggedIn"
-                        size="small"
-                        color="primary"
-                        variant="text"
-                        @click="borrowBookFromBranch(inventory.branchId)"
-                      >
-                        Mượn tại đây
-                      </v-btn>
-                    </template>
-                  </v-list-item>
-                </v-list>
+              <!-- Availability -->
+              <div class="my-4 pa-4 rounded-lg" :class="availabilityClass">
+                <div class="d-flex align-center mb-2">
+                  <v-icon :color="isAvailable ? 'success' : 'error'" class="mr-2">
+                    {{ isAvailable ? 'mdi-check-circle' : 'mdi-alert-circle' }}
+                  </v-icon>
+                  <span class="text-subtitle-1 font-weight-bold">
+                    {{ isAvailable ? 'Còn sách' : 'Hết sách' }}
+                  </span>
+                </div>
+                <p v-if="isAvailable" class="mb-0">
+                  Sách này hiện có sẵn tại thư viện. Bạn có thể mượn ngay.
+                </p>
+                <p v-else class="mb-0">
+                  Xin lỗi, sách này hiện không có sẵn. Vui lòng thử lại sau.
+                </p>
               </div>
               
-              <!-- Actions -->
-              <div class="d-flex flex-wrap gap-2">
-                <v-btn
-                  color="primary"
-                  prepend-icon="mdi-book-open-page-variant"
-                  :disabled="!isLoggedIn || book.soLuong <= 0"
-                  @click="borrowBook"
-                >
-                  Mượn sách
-                </v-btn>
+              <!-- Borrowing Form -->
+              <div v-if="isLoggedIn && isAvailable" class="mt-4">
+                <h3 class="text-h6 font-weight-medium mb-3">Mượn sách</h3>
                 
-                <v-btn
-                  variant="outlined"
-                  color="primary"
-                  prepend-icon="mdi-heart"
-                  :disabled="!isLoggedIn"
-                  @click="toggleFavorite"
-                >
-                  Yêu thích
-                </v-btn>
+                <v-form ref="borrowForm" v-model="borrowForm.valid">
+                  <v-row>
+                    <v-col cols="12" md="6">
+                      <v-select
+                        v-model="borrowForm.branchId"
+                        :items="branches"
+                        item-title="branchName"
+                        item-value="branchId"
+                        label="Chi nhánh"
+                        :rules="[v => !!v || 'Vui lòng chọn chi nhánh']"
+                        variant="outlined"
+                        hide-details="auto"
+                        class="mb-4"
+                      ></v-select>
+                    </v-col>
+                    
+                    <v-col cols="12" md="6">
+                      <v-text-field
+                        v-model="borrowForm.rentalDays"
+                        type="number"
+                        min="1"
+                        max="30"
+                        label="Số ngày mượn"
+                        hint="Phí thuê: 10,000 VND/ngày"
+                        persistent-hint
+                        :rules="[
+                          v => !!v || 'Vui lòng nhập số ngày mượn',
+                          v => v > 0 || 'Số ngày phải lớn hơn 0',
+                          v => v <= 30 || 'Thời gian mượn tối đa là 30 ngày'
+                        ]"
+                        variant="outlined"
+                        hide-details="auto"
+                        @update:model-value="calculateRentalFee"
+                      ></v-text-field>
+                    </v-col>
+                    
+                    <v-col cols="12">
+                      <v-alert type="info" variant="tonal" class="mb-4">
+                        <div class="d-flex justify-space-between align-center">
+                          <div>
+                            <strong>Phí thuê:</strong> {{ formattedRentalFee }}
+                          </div>
+                          <div>
+                            <strong>Ngày dự kiến trả:</strong> {{ formattedExpectedReturnDate }}
+                          </div>
+                        </div>
+                      </v-alert>
+                    </v-col>
+                  </v-row>
+                  
+                  <v-btn
+                    color="primary"
+                    size="large"
+                    block
+                    @click="borrowBook"
+                    :loading="borrowing"
+                    :disabled="!borrowForm.valid || borrowing"
+                  >
+                    Mượn sách
+                  </v-btn>
+                </v-form>
               </div>
               
-              <!-- Login Prompt -->
-              <v-alert
-                v-if="!isLoggedIn"
-                type="info"
-                class="mt-6"
-              >
-                Bạn cần <router-link to="/login" class="font-weight-bold">đăng nhập</router-link> để mượn sách.
-              </v-alert>
-              
-              <!-- Out of stock notice -->
-              <v-alert
-                v-else-if="book.soLuong <= 0"
-                type="warning"
-                class="mt-6"
-              >
-                Sách này hiện đã hết. Vui lòng quay lại sau.
+              <!-- Login prompt if not logged in -->
+              <v-alert v-else-if="!isLoggedIn" type="info" variant="tonal" class="mt-4">
+                Vui lòng <router-link to="/login">đăng nhập</router-link> để mượn sách.
               </v-alert>
             </v-col>
           </v-row>
@@ -193,6 +197,7 @@
 
 <script>
 import { mapGetters, mapActions } from 'vuex';
+import apiService from '@/services/api.service';
 
 export default {
   name: 'BookDetailsView',
@@ -200,7 +205,14 @@ export default {
     return {
       loading: true,
       error: null,
-      book: null
+      book: null,
+      borrowForm: {
+        valid: true,
+        branchId: null,
+        rentalDays: 1
+      },
+      borrowing: false,
+      rentalFee: 0
     };
   },
   computed: {
@@ -212,6 +224,37 @@ export default {
     
     bookId() {
       return parseInt(this.$route.params.id);
+    },
+    
+    isAvailable() {
+      return this.book && this.book.soLuong > 0;
+    },
+    
+    availabilityClass() {
+      return {
+        'bg-grey-lighten-3': !this.isAvailable,
+        'bg-grey-lighten-2': this.isAvailable
+      };
+    },
+    
+    branches() {
+      return this.book && this.book.inventories ? this.book.inventories.map(i => ({
+        branchId: i.branchId,
+        branchName: i.tenChiNhanh
+      })) : [];
+    },
+    
+    formattedRentalFee() {
+      if (!this.rentalFee) return '0 VND';
+      return `${this.rentalFee.toLocaleString()} VND`;
+    },
+    
+    formattedExpectedReturnDate() {
+      if (!this.borrowForm.rentalDays) return 'N/A';
+      const today = new Date();
+      const returnDate = new Date(today);
+      returnDate.setDate(today.getDate() + this.borrowForm.rentalDays);
+      return returnDate.toLocaleDateString();
     }
   },
   methods: {
@@ -253,8 +296,51 @@ export default {
         return;
       }
       
-      // To be implemented
-      alert('Chức năng mượn sách sẽ được phát triển trong phiên bản tiếp theo!');
+      if (!this.$refs.borrowForm.validate()) {
+        return;
+      }
+      
+      this.borrowing = true;
+      
+      const borrowingData = {
+        userId: this.$store.getters['auth/user'].userId,
+        branchId: this.borrowForm.branchId,
+        borrowingDetails: [
+          {
+            bookId: this.bookId,
+            rentalDays: parseInt(this.borrowForm.rentalDays)
+          }
+        ]
+      };
+      
+      // Gọi API để mượn sách
+      this.$store.dispatch('borrowings/createBorrowing', borrowingData)
+        .then(response => {
+          // Hiển thị thông báo thành công
+          this.$store.dispatch('setNotification', {
+            type: 'success',
+            message: `Mượn sách thành công! Phí thuê: ${response.totalRentalFee.toLocaleString()} VND`
+          }, { root: true });
+          
+          // Chuyển đến trang quản lý mượn sách
+          this.$router.push('/user/borrowings');
+        })
+        .catch(error => {
+          // Hiển thị thông báo lỗi
+          let errorMessage = 'Không thể mượn sách. Vui lòng thử lại sau.';
+          
+          if (error.response && error.response.data && error.response.data.message) {
+            errorMessage = error.response.data.message;
+          }
+          
+          this.$store.dispatch('setNotification', {
+            type: 'error',
+            message: errorMessage
+          }, { root: true });
+        })
+        .finally(() => {
+          this.borrowing = false;
+        });
     },
     
     toggleFavorite() {
@@ -297,6 +383,24 @@ export default {
       formattedText = formattedText.replace(/\*(.*?)\*/g, '<em>$1</em>');
       
       return formattedText;
+    },
+    
+    calculateRentalFee() {
+      if (!this.borrowForm.rentalDays || this.borrowForm.rentalDays <= 0) {
+        this.rentalFee = 0;
+        return;
+      }
+      
+      // Gọi API để tính phí thuê thay vì hardcode
+      apiService.borrowings.calculateRentalFee(this.borrowForm.rentalDays)
+        .then(response => {
+          this.rentalFee = response.data;
+        })
+        .catch(error => {
+          console.error('Error calculating rental fee:', error);
+          // Fallback nếu API lỗi (10,000 VND/ngày)
+          this.rentalFee = 10000 * this.borrowForm.rentalDays;
+        });
     }
   },
   created() {

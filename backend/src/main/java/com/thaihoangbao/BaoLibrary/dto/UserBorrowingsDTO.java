@@ -13,7 +13,8 @@ import lombok.NoArgsConstructor;
 public class UserBorrowingsDTO {
     private Integer userId;
     private String userName;
-    private List<LoanDTO> loans;
+    private List<BorrowingResponseDTO> borrowings;
+    private int totalActiveBorrowings;
     
     @Data
     @NoArgsConstructor

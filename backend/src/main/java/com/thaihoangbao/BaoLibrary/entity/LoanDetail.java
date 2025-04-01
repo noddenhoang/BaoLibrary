@@ -1,5 +1,6 @@
 package com.thaihoangbao.BaoLibrary.entity;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 import jakarta.persistence.CascadeType;
@@ -44,6 +45,16 @@ public class LoanDetail {
     @Column(name = "NgayTra")
     @Temporal(TemporalType.DATE)
     private Date returnDate;
+    
+    @Column(name = "SoNgayMuon")
+    private Integer rentalDays;
+    
+    @Column(name = "PhiThue")
+    private BigDecimal rentalFee;
+    
+    @Column(name = "NgayDuKienTra")
+    @Temporal(TemporalType.DATE)
+    private Date expectedReturnDate;
     
     @OneToOne(mappedBy = "loanDetail", cascade = CascadeType.ALL)
     private Return returnRecord;

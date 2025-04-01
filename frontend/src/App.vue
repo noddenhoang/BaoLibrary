@@ -6,6 +6,7 @@ import AppNavbar from './components/layout/AppNavbar.vue';
 import AppSidebar from './components/layout/AppSidebar.vue';
 import AppFooter from './components/layout/AppFooter.vue';
 import AppNotification from './components/common/AppNotification.vue';
+import NotificationSnackbar from './components/common/NotificationSnackbar.vue';
 
 const store = useStore();
 const route = useRoute();
@@ -17,12 +18,18 @@ const isLoading = computed(() => store.getters.isLoading);
 const isAuthenticated = computed(() => store.getters['auth/isAuthenticated']);
 const isAdmin = computed(() => store.getters['auth/isAdmin']);
 const snackbar = computed(() => store.getters.snackbar);
+const isSidebarOpen = computed(() => store.getters.isSidebarOpen);
 
 // Check if the current route requires sidebar
 const showSidebar = computed(() => {
   // Don't show sidebar on login, register, or 404 pages
   return !route.meta.public && isAuthenticated.value;
 });
+
+// Toggle sidebar visibility
+const toggleSidebar = () => {
+  store.dispatch('toggleSidebar');
+};
 
 // Set dark mode based on user preference or system preference
 onMounted(() => {
@@ -69,15 +76,31 @@ const closeSnackbar = () => {
         <!-- Main content area with optional sidebar -->
         <div class="flex-grow flex">
           <!-- Sidebar (only shown when authenticated and not on public pages) -->
-          <AppSidebar v-if="showSidebar" />
+          <div v-if="showSidebar" class="relative">
+            <AppSidebar :is-collapsed="!isSidebarOpen" />
+            
+            <!-- Toggle sidebar button -->
+            <button
+              @click="toggleSidebar"
+              class="absolute top-4 -right-3 z-10 bg-white dark:bg-secondary-800 shadow-md rounded-full p-1 text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 focus:outline-none transition-transform"
+              :class="{ 'rotate-180': !isSidebarOpen }"
+              aria-label="Toggle sidebar"
+            >
+              <span class="material-icons">{{ isSidebarOpen ? 'chevron_left' : 'chevron_right' }}</span>
+            </button>
+          </div>
           
           <!-- Main content -->
-          <main class="flex-grow p-4 md:p-6 transition-all duration-200">
+          <main 
+            class="flex-grow p-4 md:p-6 transition-all duration-200"
+            :class="{ 'ml-0': !isSidebarOpen || !showSidebar }"
+          >
             <router-view v-slot="{ Component }">
               <transition name="fade" mode="out-in">
                 <component :is="Component" />
               </transition>
             </router-view>
+            <NotificationSnackbar />
           </main>
         </div>
         

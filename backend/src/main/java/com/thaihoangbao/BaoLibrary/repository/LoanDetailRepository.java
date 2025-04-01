@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 import com.thaihoangbao.BaoLibrary.entity.Book;
 import com.thaihoangbao.BaoLibrary.entity.Borrowing;
 import com.thaihoangbao.BaoLibrary.entity.LoanDetail;
+import com.thaihoangbao.BaoLibrary.entity.User;
 
 @Repository
 public interface LoanDetailRepository extends JpaRepository<LoanDetail, Integer> {
@@ -44,4 +45,12 @@ public interface LoanDetailRepository extends JpaRepository<LoanDetail, Integer>
     
     // Get loan details that are not returned
     List<LoanDetail> findByLoanUserUserIdAndReturnDateIsNull(Integer userId);
+    
+    // Đếm số sách đang mượn (chưa trả) của một người dùng
+    @Query("SELECT COUNT(ld) FROM LoanDetail ld WHERE ld.loan.user = :user AND ld.returnDate IS NULL")
+    int countByLoanUserAndReturnDateIsNull(@Param("user") User user);
+    
+    // Kiểm tra sách có đang được mượn không
+    @Query("SELECT COUNT(ld) > 0 FROM LoanDetail ld WHERE ld.book.bookId = :bookId AND ld.returnDate IS NULL")
+    boolean isBookCurrentlyBorrowed(@Param("bookId") Integer bookId);
 } 
