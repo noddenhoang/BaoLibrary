@@ -55,6 +55,12 @@ public class AuthService {
             throw new RuntimeException("Email đã được sử dụng");
         }
         
+        // Check if phone number already exists
+        if (request.getSoDienThoai() != null && !request.getSoDienThoai().isEmpty() && 
+            userRepository.existsBySoDienThoai(request.getSoDienThoai())) {
+            throw new RuntimeException("Số điện thoại đã được sử dụng");
+        }
+        
         User user = new User();
         user.setHoTen(request.getHoTen());
         user.setDiaChi(request.getDiaChi());

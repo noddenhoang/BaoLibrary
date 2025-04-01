@@ -1,12 +1,10 @@
 package com.thaihoangbao.BaoLibrary.service.impl;
 
-import com.thaihoangbao.BaoLibrary.dto.PagedResponse;
-import com.thaihoangbao.BaoLibrary.dto.UserDTO;
-import com.thaihoangbao.BaoLibrary.entity.User;
-import com.thaihoangbao.BaoLibrary.exception.ResourceNotFoundException;
-import com.thaihoangbao.BaoLibrary.repository.UserRepository;
-import com.thaihoangbao.BaoLibrary.repository.ViolationRepository;
-import com.thaihoangbao.BaoLibrary.service.UserService;
+import java.math.BigDecimal;
+import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -16,10 +14,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
+import com.thaihoangbao.BaoLibrary.dto.PagedResponse;
+import com.thaihoangbao.BaoLibrary.dto.UserDTO;
+import com.thaihoangbao.BaoLibrary.entity.User;
+import com.thaihoangbao.BaoLibrary.exception.ResourceNotFoundException;
+import com.thaihoangbao.BaoLibrary.repository.UserRepository;
+import com.thaihoangbao.BaoLibrary.repository.ViolationRepository;
+import com.thaihoangbao.BaoLibrary.service.UserService;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -82,8 +83,14 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("Tài khoản đã tồn tại");
         }
         
-        if (userDTO.getEmail() != null && userRepository.existsByEmail(userDTO.getEmail())) {
+        if (userDTO.getEmail() != null && !userDTO.getEmail().isEmpty() && 
+            userRepository.existsByEmail(userDTO.getEmail())) {
             throw new RuntimeException("Email đã tồn tại");
+        }
+        
+        if (userDTO.getSoDienThoai() != null && !userDTO.getSoDienThoai().isEmpty() && 
+            userRepository.existsBySoDienThoai(userDTO.getSoDienThoai())) {
+            throw new RuntimeException("Số điện thoại đã được sử dụng");
         }
         
         User user = new User();
@@ -129,7 +136,25 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + id));
         
-        // Cập nhật các trường thông tin
+        // Kiểm tra tài khoản và email không trùng với người dùng khác
+        if (userDTO.getTaiKhoan() != null && !userDTO.getTaiKhoan().equals(user.getTaiKhoan()) &&
+            userRepository.existsByTaiKhoan(userDTO.getTaiKhoan())) {
+            throw new RuntimeException("Tài khoản đã tồn tại");
+        }
+        
+        if (userDTO.getEmail() != null && !userDTO.getEmail().isEmpty() && 
+            !userDTO.getEmail().equals(user.getEmail()) && userRepository.existsByEmail(userDTO.getEmail())) {
+            throw new RuntimeException("Email đã tồn tại");
+        }
+        
+        // Kiểm tra số điện thoại không trùng với người dùng khác
+        if (userDTO.getSoDienThoai() != null && !userDTO.getSoDienThoai().isEmpty() && 
+            !userDTO.getSoDienThoai().equals(user.getSoDienThoai()) && 
+            userRepository.existsBySoDienThoai(userDTO.getSoDienThoai())) {
+            throw new RuntimeException("Số điện thoại đã được sử dụng");
+        }
+        
+        // Cập nhật các trường
         if (userDTO.getHoTen() != null) {
             user.setHoTen(userDTO.getHoTen());
         }

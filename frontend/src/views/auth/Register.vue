@@ -180,7 +180,11 @@ export default {
   },
   
   methods: {
-    ...mapActions('auth', ['register', 'clearError']),
+    ...mapActions('auth', ['register']),
+    
+    clearError() {
+      this.$store.commit('auth/SET_ERROR', null);
+    },
     
     async submitRegister() {
       if (!this.$refs.form.validate()) return;

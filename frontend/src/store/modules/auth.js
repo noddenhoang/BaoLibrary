@@ -38,6 +38,24 @@ const auth = {
       }
     },
     
+    SET_AUTH(state, auth) {
+      state.token = auth.token;
+      state.user = auth.user;
+      state.isAuthenticated = auth.isAuthenticated;
+      
+      if (auth.token) {
+        localStorage.setItem('token', auth.token);
+      } else {
+        localStorage.removeItem('token');
+      }
+      
+      if (auth.user) {
+        localStorage.setItem('user', JSON.stringify(auth.user));
+      } else {
+        localStorage.removeItem('user');
+      }
+    },
+    
     LOGOUT(state) {
       state.token = null;
       state.user = null;
@@ -151,7 +169,24 @@ const auth = {
         return true;
       } catch (error) {
         console.error('Register error:', error);
-        const errorMessage = error.response?.data?.message || 'Đăng ký thất bại. Vui lòng thử lại.';
+        let errorMessage = 'Đăng ký thất bại. Vui lòng thử lại.';
+        
+        if (error.response) {
+          // Parse backend error message
+          const responseData = error.response.data;
+          if (responseData && responseData.message) {
+            if (responseData.message.includes('Tài khoản đã tồn tại')) {
+              errorMessage = 'Tài khoản đã tồn tại';
+            } else if (responseData.message.includes('Email đã được sử dụng')) {
+              errorMessage = 'Email đã được sử dụng';
+            } else if (responseData.message.includes('Số điện thoại đã được sử dụng')) {
+              errorMessage = 'Số điện thoại đã được sử dụng';
+            } else {
+              errorMessage = responseData.message;
+            }
+          }
+        }
+        
         commit('SET_ERROR', errorMessage);
         
         // Dispatch to root store to show error notification
