@@ -443,6 +443,7 @@
 import { debounce } from 'lodash';
 import apiService from '@/services/api.service';
 import { mapActions, mapGetters } from 'vuex';
+import axios from 'axios';
 
 export default {
   name: 'BookManagementPage',
@@ -509,7 +510,7 @@ export default {
   
   methods: {
     ...mapActions('branches', ['fetchBranches']),
-    ...mapActions('inventory', ['fetchInventoriesByBookId']),
+    ...mapActions('inventory', ['fetchInventoriesByBookId', 'fetchInventoriesDirectly']),
     
     // Format text in the editor
     formatText(command) {
@@ -707,20 +708,13 @@ export default {
           categoryIds: book.categories?.map(c => c.categoryId) || []
         };
         
-        // Fetch inventory data for this book
-        try {
-          const inventories = await this.fetchInventoriesByBookId(book.bookId);
-          // Populate branch quantities
-          inventories.forEach(inv => {
-            this.branchQuantities[inv.branchId] = inv.soLuongHienCo;
-          });
-          
-          // Calculate total from branch quantities
-          this.updateTotalQuantity();
-        } catch (error) {
-          console.error('Error fetching inventories:', error);
-          this.$toast.error('Không thể tải thông tin số lượng sách theo chi nhánh');
-        }
+        // Khởi tạo số lượng mặc định = 0 cho mỗi chi nhánh
+        this.branches.forEach(branch => {
+          this.branchQuantities[branch.branchId] = 0;
+        });
+        
+        // Fetch inventory data from server
+        await this.fetchInventories(book.bookId);
       } else {
         // Add mode
         this.bookDialog.isEdit = false;
@@ -976,9 +970,13 @@ export default {
       
       // Create inventory objects for each branch
       Object.keys(this.branchQuantities).forEach(branchId => {
+        // Đảm bảo branchId là số nguyên và số lượng hợp lệ
+        const branchIdNum = parseInt(branchId);
+        if (isNaN(branchIdNum)) return; // Bỏ qua nếu branchId không phải số
+        
         const quantity = parseInt(this.branchQuantities[branchId]) || 0;
         inventories.push({
-          branchId: parseInt(branchId),
+          branchId: branchIdNum,
           bookId: this.bookDialog.book.bookId || null,
           tongSoBan: quantity,
           soLuongHienCo: quantity
@@ -986,7 +984,85 @@ export default {
       });
       
       return inventories;
-    }
+    },
+    
+    // Fetch inventory data from server
+    async fetchInventories(bookId) {
+      console.log(`Fetching inventories directly using API service for book ID: ${bookId}`);
+      
+      // Kiểm tra bookId phải là số hợp lệ
+      if (!bookId || isNaN(parseInt(bookId))) {
+        console.error('Invalid bookId:', bookId);
+        return;
+      }
+      
+      // Đảm bảo bookId là số nguyên
+      const bookIdInt = parseInt(bookId);
+      
+      try {
+        // Tạo đối tượng formData để sử dụng POST thay vì GET
+        const requestData = { bookId: bookIdInt };
+        
+        // Lấy token xác thực
+        const token = localStorage.getItem('token');
+        if (!token) {
+          console.warn('No auth token available');
+          return;
+        }
+        
+        const config = {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        };
+        
+        console.log('Requesting inventories with POST method');
+        
+        // Truy vấn trực tiếp vào API endpoint /api/inventories/book/
+        // Sử dụng POST thay vì GET để tránh lỗi với PathVariable
+        const response = await axios.post('/api/inventories/book', requestData, config);
+        console.log('Inventory API response:', response);
+        
+        if (response && response.data) {
+          const inventories = response.data;
+          
+          // Reset quantities for all branches to 0 first
+          this.branches.forEach(branch => {
+            this.branchQuantities[branch.branchId] = 0;
+          });
+          
+          // Update quantities based on actual inventory data
+          if (inventories && inventories.length > 0) {
+            console.log(`Found ${inventories.length} inventory records`);
+            
+            inventories.forEach(inv => {
+              if (inv && inv.branchId) {
+                const availableQty = inv.soLuongHienCo !== undefined ? inv.soLuongHienCo : 
+                                    (inv.availableCopies !== undefined ? inv.availableCopies : 0);
+                                    
+                console.log(`Setting quantity for branch ${inv.branchId} (${inv.tenChiNhanh}): ${availableQty}`);
+                this.branchQuantities[inv.branchId] = availableQty;
+              }
+            });
+          } else {
+            console.log('No inventory records found, keeping zero values');
+          }
+          
+          // Update total quantity
+          this.updateTotalQuantity();
+        }
+      } catch (error) {
+        console.error('Error fetching inventories:', error);
+        
+        // Vẫn phải khởi tạo branchQuantities về 0 nếu gặp lỗi
+        this.branches.forEach(branch => {
+          this.branchQuantities[branch.branchId] = 0;
+        });
+        
+        this.$toast.error('Không thể tải thông tin số lượng sách theo chi nhánh');
+      }
+    },
   },
   
   async created() {

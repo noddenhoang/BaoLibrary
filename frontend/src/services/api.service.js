@@ -108,8 +108,14 @@ const apiService = {
   
   // Inventory API
   inventory: {
-    getByBookId: (bookId) => apiClient.get(`/inventories/book/${bookId}`),
-    getByBookAndBranch: (bookId, branchId) => apiClient.get(`/inventories/book/${bookId}/branch/${branchId}`),
+    getByBookId: (bookId) => {
+      const config = { timeout: 15000 };
+      return apiClient.get(`/inventories/book/${bookId}`, config);
+    },
+    getByBookAndBranch: (bookId, branchId) => {
+      const config = { timeout: 15000 };
+      return apiClient.get(`/inventories/book/${bookId}/branch/${branchId}`, config);
+    },
     update: (inventoryData) => apiClient.put('/inventories/update', inventoryData),
     updateAll: (bookId, inventoryList) => apiClient.put(`/inventories/book/${bookId}/update-all`, inventoryList),
     checkAvailability: (bookId, branchId) => apiClient.get(`/inventories/check/${bookId}/${branchId}`)

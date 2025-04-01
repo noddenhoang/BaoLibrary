@@ -36,12 +36,30 @@ export default {
       commit('SET_LOADING', true);
       try {
         const response = await apiService.inventory.getByBookId(bookId);
-        commit('SET_INVENTORIES', response.data);
-        return response.data;
+        // Kiểm tra dữ liệu response
+        console.log('Raw inventory response:', JSON.stringify(response.data, null, 2));
+        
+        // Xử lý và chuẩn hóa dữ liệu
+        const processedInventories = (response.data || []).map(inv => {
+          return {
+            ...inv,
+            // Đảm bảo soLuongHienCo luôn có giá trị dù API trả về tên trường nào
+            soLuongHienCo: inv.soLuongHienCo !== undefined ? inv.soLuongHienCo :
+                           inv.availableCopies !== undefined ? inv.availableCopies : 0,
+            // Đảm bảo tongSoBan luôn có giá trị
+            tongSoBan: inv.tongSoBan !== undefined ? inv.tongSoBan :
+                       inv.totalCopies !== undefined ? inv.totalCopies : 0
+          };
+        });
+        
+        console.log('Processed inventories:', JSON.stringify(processedInventories, null, 2));
+        commit('SET_INVENTORIES', processedInventories);
+        return processedInventories;
       } catch (error) {
         console.error(`Error fetching inventories for book ${bookId}:`, error);
         commit('SET_ERROR', error.message || `Error fetching inventories for book ${bookId}`);
-        throw error;
+        commit('SET_INVENTORIES', []);
+        return [];
       } finally {
         commit('SET_LOADING', false);
       }
@@ -99,6 +117,41 @@ export default {
         console.error(`Error checking availability for book ${bookId} at branch ${branchId}:`, error);
         commit('SET_ERROR', error.message || `Error checking book availability`);
         throw error;
+      }
+    },
+
+    async fetchInventoriesDirectly({ commit }, bookId) {
+      commit('SET_LOADING', true);
+      try {
+        console.log('Fetching inventories directly from API for book ID:', bookId);
+        const response = await apiService.inventory.getByBookId(bookId);
+        console.log('Direct API response:', JSON.stringify(response.data, null, 2));
+        
+        if (!response.data || !Array.isArray(response.data)) {
+          console.warn('API did not return array data:', response.data);
+          return [];
+        }
+        
+        // Xử lý và chuẩn hóa dữ liệu
+        const processedInventories = response.data.map(inv => {
+          return {
+            ...inv,
+            // Đảm bảo soLuongHienCo luôn có giá trị dù API trả về tên trường nào
+            soLuongHienCo: inv.soLuongHienCo !== undefined ? inv.soLuongHienCo :
+                           inv.availableCopies !== undefined ? inv.availableCopies : 0,
+            // Đảm bảo tongSoBan luôn có giá trị
+            tongSoBan: inv.tongSoBan !== undefined ? inv.tongSoBan :
+                       inv.totalCopies !== undefined ? inv.totalCopies : 0
+          };
+        });
+        
+        console.log('Processed direct inventories:', JSON.stringify(processedInventories, null, 2));
+        return processedInventories;
+      } catch (error) {
+        console.error('Error fetching inventories directly:', error);
+        return [];
+      } finally {
+        commit('SET_LOADING', false);
       }
     }
   },
