@@ -151,18 +151,6 @@
             <span v-else class="text-grey">Chưa phân loại</span>
           </template>
 
-          <!-- Số lượng Column -->
-          <template v-slot:item.soLuong="{ item }">
-            <div class="d-flex align-center">
-              <v-chip
-                :color="item.soLuong > 0 ? 'success' : 'error'"
-                size="small"
-              >
-                {{ item.soLuong }}
-              </v-chip>
-            </div>
-          </template>
-
           <!-- Actions Column -->
           <template v-slot:item.actions="{ item }">
             <div class="d-flex">
@@ -311,26 +299,86 @@
                   ></v-autocomplete>
                 </v-col>
 
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="bookDialog.book.soLuong"
-                    type="number"
-                    label="Số lượng"
-                    hint="Nhập số lượng sách"
-                    min="0"
-                    variant="outlined"
-                  ></v-text-field>
-                </v-col>
-
                 <v-col cols="12">
-                  <v-textarea
-                    v-model="bookDialog.book.moTa"
-                    label="Mô tả"
-                    hint="Mô tả nội dung của sách"
-                    auto-grow
-                    variant="outlined"
-                    rows="3"
-                  ></v-textarea>
+                  <label class="v-label text-subtitle-1 pb-1">Mô tả</label>
+                  <div class="text-editor-container">
+                    <div class="editor-tools pa-2 d-flex align-center">
+                      <v-btn
+                        icon
+                        variant="text"
+                        size="small"
+                        title="In đậm"
+                        @click="formatText('bold')"
+                        class="mr-2"
+                      >
+                        <v-icon>mdi-format-bold</v-icon>
+                      </v-btn>
+                      <v-btn
+                        icon
+                        variant="text"
+                        size="small"
+                        title="In nghiêng"
+                        @click="formatText('italic')"
+                        class="mr-2"
+                      >
+                        <v-icon>mdi-format-italic</v-icon>
+                      </v-btn>
+                      <v-btn
+                        icon
+                        variant="text"
+                        size="small"
+                        title="Xuống dòng"
+                        @click="formatText('lineBreak')"
+                      >
+                        <v-icon>mdi-keyboard-return</v-icon>
+                      </v-btn>
+                    </div>
+                    <div
+                      ref="editor"
+                      id="book-description-editor"
+                      contenteditable="true"
+                      class="content-editor pa-3"
+                      @input="updateDescription"
+                    ></div>
+                    <div class="text-caption text-grey-darken-1 mt-1">
+                      Nhập mô tả chi tiết của sách. Sử dụng các công cụ định dạng phía trên để tạo nội dung phong phú.
+                    </div>
+                  </div>
+                </v-col>
+                
+                <!-- Số lượng sách theo chi nhánh -->
+                <v-col cols="12">
+                  <v-divider class="my-2"></v-divider>
+                  <h3 class="text-h6 mb-3">Số lượng sách theo chi nhánh</h3>
+                  
+                  <v-row v-if="branches.length > 0">
+                    <template v-for="(branch, index) in branches" :key="branch.branchId">
+                      <v-col cols="12" md="6">
+                        <v-card flat border class="pa-3 mb-2">
+                          <div class="d-flex align-center mb-2">
+                            <v-icon class="mr-2">mdi-store</v-icon>
+                            <strong>{{ branch.tenChiNhanh }}</strong>
+                          </div>
+                          
+                          <v-text-field
+                            v-model="branchQuantities[branch.branchId]"
+                            label="Số lượng sách tại chi nhánh"
+                            type="number"
+                            min="0"
+                            variant="outlined"
+                            density="compact"
+                            hint="Số lượng sách có sẵn tại chi nhánh này"
+                            class="mt-2"
+                            @update:model-value="updateTotalQuantity"
+                          ></v-text-field>
+                        </v-card>
+                      </v-col>
+                    </template>
+                  </v-row>
+                  
+                  <p v-else class="text-body-2">
+                    Chưa có chi nhánh nào. Sách sẽ được thêm vào với số lượng mặc định.
+                  </p>
                 </v-col>
               </v-row>
             </v-container>
@@ -394,6 +442,7 @@
 <script>
 import { debounce } from 'lodash';
 import apiService from '@/services/api.service';
+import { mapActions, mapGetters } from 'vuex';
 
 export default {
   name: 'BookManagementPage',
@@ -408,6 +457,7 @@ export default {
       search: '',
       selectedFile: null,
       uploadingImage: false,
+      branchQuantities: {}, // Lưu số lượng sách theo từng chi nhánh
       
       // Filters
       filters: {
@@ -425,7 +475,7 @@ export default {
         totalPages: 0
       },
       
-      // Book Dialog
+      // Dialog cho thêm/sửa sách
       bookDialog: {
         show: false,
         isEdit: false,
@@ -433,7 +483,7 @@ export default {
         book: this.getEmptyBookObject()
       },
       
-      // Delete Dialog
+      // Dialog xác nhận xóa
       deleteDialog: {
         show: false,
         loading: false,
@@ -445,7 +495,6 @@ export default {
         { title: 'Hình ảnh', key: 'hinhAnhSach', sortable: false, width: '80px' },
         { title: 'Tên sách', key: 'tuaSach', sortable: true },
         { title: 'Năm xuất bản', key: 'namXuatBan', sortable: true, width: '150px' },
-        { title: 'Số lượng', key: 'soLuong', sortable: true, width: '120px' },
         { title: 'Tác giả', key: 'authors', sortable: false },
         { title: 'Danh mục', key: 'categories', sortable: false },
         { title: 'Thao tác', key: 'actions', sortable: false, align: 'end', width: '120px' }
@@ -453,17 +502,94 @@ export default {
     };
   },
   
-  created() {
-    this.debouncedSearch = debounce(this.handleSearchChange, 500);
-    this.fetchCategories();
-    this.fetchAuthors();
-    this.fetchBooks();
-    // Add debug info to check auth state
-    console.log('BookManagement created, checking auth status:');
-    apiService.debug.checkAuth();
+  computed: {
+    ...mapGetters('branches', ['branches']),
+    ...mapGetters('inventory', ['inventories']),
   },
   
   methods: {
+    ...mapActions('branches', ['fetchBranches']),
+    ...mapActions('inventory', ['fetchInventoriesByBookId']),
+    
+    // Format text in the editor
+    formatText(command) {
+      // Focus the editor if not already focused
+      this.$refs.editor.focus();
+      
+      // Execute different commands based on the button clicked
+      if (command === 'bold') {
+        document.execCommand('bold', false, null);
+      } else if (command === 'italic') {
+        document.execCommand('italic', false, null);
+      } else if (command === 'lineBreak') {
+        document.execCommand('insertHTML', false, '<br>');
+      }
+    },
+    
+    // Update the book description when the content of the editor changes
+    updateDescription() {
+      if (this.$refs.editor) {
+        // Format and save the content to the book model
+        this.bookDialog.book.moTa = this.formatContentForSaving(this.$refs.editor.innerHTML);
+      }
+    },
+    
+    // Format HTML content from editor to save in database (matching Test/script.js)
+    formatContentForSaving(html) {
+      // Create a temporary div to work with the HTML
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = html;
+      
+      // Replace <br> and <div> (new lines in contenteditable) with \n
+      let text = tempDiv.innerHTML
+          .replace(/<br\s*\/?>/gi, '\\n')
+          .replace(/<div\s*\/?>/gi, '\\n')
+          .replace(/<\/div>/gi, '');
+      
+      // Replace <i> and <em> with *
+      text = text.replace(/<(i|em)>(.*?)<\/(i|em)>/gi, function(match, p1, p2) {
+          return '*' + p2 + '*';
+      });
+      
+      // Replace <b> and <strong> with ** (after handling italics to avoid conflicts)
+      text = text.replace(/<(b|strong)>(.*?)<\/(b|strong)>/gi, function(match, p1, p2) {
+          return '**' + p2 + '**';
+      });
+      
+      // Clean up any leftover HTML tags
+      text = text
+          .replace(/<[^>]*>/g, '')
+          .replace(/&nbsp;/g, ' ')
+          .replace(/\\n\\n/g, '\\n') // Fix double line breaks
+          .trim();
+      
+      return text;
+    },
+    
+    // Format text from database format to HTML display (matching Test/script.js)
+    formatContentForDisplay(text) {
+      if (!text) return '';
+      
+      // Replace \n with <br> for line breaks
+      let formattedText = text.replace(/\\n/g, '<br>');
+      
+      // Process bold and italic formatting in a specific order to avoid conflicts
+      
+      // 1. Replace text between **** with bold tags
+      formattedText = formattedText.replace(/\*\*\*\*(.*?)\*\*\*\*/g, '<strong>$1</strong>');
+      
+      // 2. Replace text between ** with bold tags
+      formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      
+      // 3. Replace text between _ _ with italic tags
+      formattedText = formattedText.replace(/_(.*?)_/g, '<em>$1</em>');
+      
+      // 4. Replace text between single * * with italic tags (after handling ** for bold)
+      formattedText = formattedText.replace(/\*(.*?)\*/g, '<em>$1</em>');
+      
+      return formattedText;
+    },
+    
     async fetchBooks() {
       console.log(`Fetching books: backend pageNo=${this.pagination.pageNo}, frontend page=${this.pagination.currentPage}`);
       this.loading = true;
@@ -558,7 +684,15 @@ export default {
     },
     
     // Open dialog to add or edit a book
-    openBookDialog(book = null) {
+    async openBookDialog(book = null) {
+      // Reset branch quantities
+      this.branchQuantities = {};
+      
+      // Fetch branches if not loaded
+      if (this.branches.length === 0) {
+        await this.fetchBranches();
+      }
+      
       if (book) {
         // Edit mode - clone the book to avoid direct mutation
         this.bookDialog.isEdit = true;
@@ -572,16 +706,77 @@ export default {
           authorIds: book.authors?.map(a => a.authorId) || [],
           categoryIds: book.categories?.map(c => c.categoryId) || []
         };
+        
+        // Fetch inventory data for this book
+        try {
+          const inventories = await this.fetchInventoriesByBookId(book.bookId);
+          // Populate branch quantities
+          inventories.forEach(inv => {
+            this.branchQuantities[inv.branchId] = inv.soLuongHienCo;
+          });
+          
+          // Calculate total from branch quantities
+          this.updateTotalQuantity();
+        } catch (error) {
+          console.error('Error fetching inventories:', error);
+          this.$toast.error('Không thể tải thông tin số lượng sách theo chi nhánh');
+        }
       } else {
         // Add mode
         this.bookDialog.isEdit = false;
         this.bookDialog.book = this.getEmptyBookObject();
+        
+        // Initialize branch quantities to 0
+        this.branches.forEach(branch => {
+          this.branchQuantities[branch.branchId] = 0;
+        });
       }
+      
       this.bookDialog.show = true;
+      
+      // Set a short timeout to ensure the DOM is updated before setting the editor content
+      this.$nextTick(() => {
+        // Initialize the rich text editor with formatted content
+        if (this.$refs.editor) {
+          const formattedContent = this.formatContentForDisplay(this.bookDialog.book.moTa);
+          this.$refs.editor.innerHTML = formattedContent;
+        }
+      });
+    },
+    
+    // Create an empty book object for the form
+    getEmptyBookObject() {
+      return {
+        tuaSach: '',
+        moTa: '',
+        namXuatBan: new Date().getFullYear(),
+        hinhAnhSach: '',
+        soLuong: 0,
+        authorIds: [],
+        categoryIds: [],
+        inventories: []
+      };
+    },
+    
+    // Update total quantity when branch quantities change
+    updateTotalQuantity() {
+      // Tính tổng số lượng từ tất cả các chi nhánh
+      let total = 0;
+      
+      for (const branchId in this.branchQuantities) {
+        const quantity = parseInt(this.branchQuantities[branchId]) || 0;
+        total += quantity;
+      }
+      
+      // Cập nhật tổng số lượng vào model
+      this.bookDialog.book.soLuong = total;
     },
     
     // Save (create or update) book
     async saveBook() {
+      // Validate soLuong based on branches
+      this.updateTotalQuantity();
+      
       // Form validation
       if (!this.bookDialog.book.tuaSach) {
         this.$toast.error('Tên sách là trường bắt buộc.');
@@ -595,7 +790,11 @@ export default {
         // Check for proper authentication
         if (!this.checkAuthForManagement()) return;
         
-        console.log('Saving book:', this.bookDialog.book);
+        // Prepare inventories data
+        const inventories = this.prepareInventoriesData();
+        this.bookDialog.book.inventories = inventories;
+        
+        console.log('Saving book with inventory data:', this.bookDialog.book);
         
         let response;
         if (this.bookDialog.isEdit) {
@@ -681,19 +880,6 @@ export default {
       } finally {
         this.deleteDialog.loading = false;
       }
-    },
-    
-    // Create an empty book object for the form
-    getEmptyBookObject() {
-      return {
-        tuaSach: '',
-        moTa: '',
-        namXuatBan: new Date().getFullYear(),
-        hinhAnhSach: '',
-        soLuong: 0,
-        authorIds: [],
-        categoryIds: []
-      };
     },
     
     // Handle file selection
@@ -782,6 +968,41 @@ export default {
       }
       
       return true;
+    },
+    
+    // Prepare inventory data before saving
+    prepareInventoriesData() {
+      const inventories = [];
+      
+      // Create inventory objects for each branch
+      Object.keys(this.branchQuantities).forEach(branchId => {
+        const quantity = parseInt(this.branchQuantities[branchId]) || 0;
+        inventories.push({
+          branchId: parseInt(branchId),
+          bookId: this.bookDialog.book.bookId || null,
+          tongSoBan: quantity,
+          soLuongHienCo: quantity
+        });
+      });
+      
+      return inventories;
+    }
+  },
+  
+  async created() {
+    try {
+      // Fetch initial data
+      await Promise.all([
+        this.fetchCategories(),
+        this.fetchAuthors(),
+        this.fetchBranches()
+      ]);
+      
+      // Fetch books
+      this.fetchBooks();
+    } catch (error) {
+      console.error('Error initializing page:', error);
+      this.error = 'Không thể tải dữ liệu ban đầu. Vui lòng thử lại sau.';
     }
   }
 };
@@ -796,5 +1017,28 @@ export default {
 
 .v-card-title.text-h5 {
   font-weight: bold;
+}
+
+.text-editor-container {
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  margin-top: 5px;
+  overflow: hidden;
+}
+
+.editor-tools {
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.content-editor {
+  min-height: 150px;
+  background-color: white;
+  outline: none;
+  line-height: 1.5;
+}
+
+.content-editor:focus {
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.05);
 }
 </style>

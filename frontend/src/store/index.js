@@ -4,6 +4,8 @@ import books from './modules/books';
 import users from './modules/users';
 import categories from './modules/categories';
 import authors from './modules/authors';
+import branches from './modules/branches';
+import inventory from './modules/inventory';
 
 // Root store configuration
 const store = {
@@ -112,7 +114,9 @@ const store = {
     books,
     users,
     categories,
-    authors
+    authors,
+    branches,
+    inventory
   }
 };
 

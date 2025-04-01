@@ -87,7 +87,7 @@ export default {
       loading: true,
       pagination: {
         pageNo: 0,
-        pageSize: 12,
+        pageSize: 10, // Changed from 12 to 10 as per your original question
         sortBy: 'tuaSach',
         sortDir: 'asc'
       },

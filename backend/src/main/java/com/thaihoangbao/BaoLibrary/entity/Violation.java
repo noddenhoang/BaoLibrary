@@ -35,6 +35,9 @@ public class Violation {
     @Column(name = "LoaiViPham")
     private String violationType; // "late_return", "damaged_book", "lost_book"
     
+    @Column(name = "MoTa")
+    private String description;
+    
     @Column(name = "SoTienPhat")
     private BigDecimal fineAmount;
     

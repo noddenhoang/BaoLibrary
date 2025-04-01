@@ -39,7 +39,7 @@
             <!-- Book Cover -->
             <v-col cols="12" sm="4" md="3" class="pa-4">
               <v-img
-                :src="book.hinhAnhSach || '/placeholder-book.jpg'"
+                :src="book.hinhAnhSach || 'https://via.placeholder.com/300x400/e0e0e0/666666?text=No+Image'"
                 :alt="book.tuaSach"
                 height="400"
                 class="rounded"
@@ -74,42 +74,71 @@
               </div>
               
               <!-- Year -->
-              <p class="text-body-1 mb-4" v-if="book.namXuatBan">
+              <p class="text-body-1 mb-2" v-if="book.namXuatBan">
                 <span class="font-weight-medium">Năm xuất bản:</span> {{ book.namXuatBan }}
+              </p>
+              
+              <!-- Quantity -->
+              <p class="text-body-1 mb-4">
+                <span class="font-weight-medium">Số lượng có sẵn:</span> 
+                <v-chip
+                  :color="book.soLuong > 0 ? 'success' : 'error'"
+                  variant="outlined"
+                  class="ml-2"
+                >
+                  {{ book.soLuong > 0 ? book.soLuong : 'Hết sách' }}
+                </v-chip>
               </p>
               
               <!-- Description -->
               <div class="mb-6" v-if="book.moTa">
                 <h3 class="text-h6 font-weight-medium mb-2">Mô tả</h3>
-                <p class="text-body-1">{{ book.moTa }}</p>
+                <div class="text-body-1 formatted-description" v-html="formatDescription(book.moTa)"></div>
               </div>
               
-              <!-- Quantity -->
-              <v-list-item>
-                <template v-slot:prepend>
-                  <v-icon>mdi-bookshelf</v-icon>
-                </template>
-                <v-list-item-title>Số lượng</v-list-item-title>
-                <v-list-item-subtitle>
-                  <v-chip 
-                    :color="book.soLuong > 0 ? 'success' : 'error'"
+              <!-- Availability by Branch -->
+              <div v-if="book.inventories && book.inventories.length > 0" class="mb-6">
+                <h3 class="text-h6 font-weight-medium mb-2">Tình trạng sách theo chi nhánh</h3>
+                <v-list density="compact" border rounded>
+                  <v-list-item
+                    v-for="inventory in book.inventories"
+                    :key="`${inventory.bookId}-${inventory.branchId}`"
+                    :title="inventory.tenChiNhanh"
+                    :subtitle="inventory.soLuongHienCo > 0 ? `Còn ${inventory.soLuongHienCo} cuốn` : 'Hết sách'"
                   >
-                    {{ book.soLuong || 0 }} quyển
-                  </v-chip>
-                </v-list-item-subtitle>
-              </v-list-item>
+                    <template v-slot:prepend>
+                      <v-icon 
+                        :color="inventory.soLuongHienCo > 0 ? 'success' : 'error'"
+                        class="mr-2"
+                      >
+                        {{ inventory.soLuongHienCo > 0 ? 'mdi-check-circle' : 'mdi-close-circle' }}
+                      </v-icon>
+                    </template>
+                    
+                    <template v-slot:append>
+                      <v-btn
+                        v-if="inventory.soLuongHienCo > 0 && isLoggedIn"
+                        size="small"
+                        color="primary"
+                        variant="text"
+                        @click="borrowBookFromBranch(inventory.branchId)"
+                      >
+                        Mượn tại đây
+                      </v-btn>
+                    </template>
+                  </v-list-item>
+                </v-list>
+              </div>
               
               <!-- Actions -->
               <div class="d-flex flex-wrap gap-2">
                 <v-btn
                   color="primary"
-                  size="large"
-                  prepend-icon="mdi-book-arrow-right"
-                  class="mb-4"
-                  :disabled="book.soLuong <= 0"
+                  prepend-icon="mdi-book-open-page-variant"
+                  :disabled="!isLoggedIn || book.soLuong <= 0"
                   @click="borrowBook"
                 >
-                  {{ book.soLuong > 0 ? 'Mượn sách' : 'Hết sách' }}
+                  Mượn sách
                 </v-btn>
                 
                 <v-btn
@@ -130,6 +159,15 @@
                 class="mt-6"
               >
                 Bạn cần <router-link to="/login" class="font-weight-bold">đăng nhập</router-link> để mượn sách.
+              </v-alert>
+              
+              <!-- Out of stock notice -->
+              <v-alert
+                v-else-if="book.soLuong <= 0"
+                type="warning"
+                class="mt-6"
+              >
+                Sách này hiện đã hết. Vui lòng quay lại sau.
               </v-alert>
             </v-col>
           </v-row>
@@ -200,9 +238,9 @@ export default {
     },
     
     handleImageError(event) {
-      console.warn(`Failed to load image for book: ${this.book?.tuaSach}`);
+      console.warn('Failed to load book cover image');
       if (event && event.target) {
-        event.target.src = '/placeholder-book.jpg';
+        event.target.src = 'https://via.placeholder.com/300x400/e0e0e0/666666?text=No+Image';
       }
     },
     
@@ -230,6 +268,35 @@ export default {
       
       // To be implemented
       alert('Chức năng yêu thích sẽ được phát triển trong phiên bản tiếp theo!');
+    },
+    
+    borrowBookFromBranch(branchId) {
+      // To be implemented
+      alert('Chức năng mượn sách tại chi nhánh sẽ được phát triển trong phiên bản tiếp theo!');
+    },
+    
+    // Format text from database format to HTML display
+    formatDescription(text) {
+      if (!text) return '';
+      
+      // Replace \n with <br> for line breaks
+      let formattedText = text.replace(/\\n/g, '<br>');
+      
+      // Process bold and italic formatting in a specific order to avoid conflicts
+      
+      // 1. Replace text between **** with bold tags
+      formattedText = formattedText.replace(/\*\*\*\*(.*?)\*\*\*\*/g, '<strong>$1</strong>');
+      
+      // 2. Replace text between ** with bold tags
+      formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      
+      // 3. Replace text between _ _ with italic tags
+      formattedText = formattedText.replace(/_(.*?)_/g, '<em>$1</em>');
+      
+      // 4. Replace text between single * * with italic tags (after handling ** for bold)
+      formattedText = formattedText.replace(/\*(.*?)\*/g, '<em>$1</em>');
+      
+      return formattedText;
     }
   },
   created() {
@@ -237,3 +304,21 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.book-details-page {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.formatted-description {
+  line-height: 1.6;
+}
+
+.formatted-description :deep(strong) {
+  font-weight: 700;
+}
+
+.formatted-description :deep(em) {
+  font-style: italic;
+}
+</style>

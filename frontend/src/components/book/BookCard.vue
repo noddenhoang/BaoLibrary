@@ -1,8 +1,7 @@
 <template>
   <v-card
-    :to="book.soLuong > 0 ? { name: 'BookDetails', params: { id: book.bookId } } : ''"
+    :to="{ name: 'BookDetails', params: { id: book.bookId } }"
     class="book-card h-full transition-all duration-300"
-    :class="{ 'sold-out': book.soLuong <= 0 }"
     :elevation="hovering ? 8 : 2"
     @mouseenter="hovering = true"
     @mouseleave="hovering = false"
@@ -21,28 +20,14 @@
             <v-progress-circular indeterminate color="primary"></v-progress-circular>
           </div>
         </template>
-        <div 
-          v-if="book.soLuong <= 0" 
-          class="sold-out-overlay d-flex align-center justify-center"
-        >
-          <div class="text-h5 font-weight-bold white--text">HẾT SÁCH</div>
-        </div>
       </v-img>
     </div>
     
     <v-card-title class="text-truncate">{{ book.tuaSach }}</v-card-title>
     
     <v-card-subtitle>
-      <div class="d-flex align-center">
-        <span class="text-truncate">{{ authorsList }}</span>
-        <v-spacer></v-spacer>
-        <v-chip 
-          size="small" 
-          :color="book.soLuong > 0 ? 'success' : 'error'" 
-          class="ml-2"
-        >
-          {{ book.soLuong || 0 }}
-        </v-chip>
+      <div class="text-truncate mb-1" v-if="book.authors && book.authors.length > 0">
+        <span>{{ authorsList }}</span>
       </div>
       <div v-if="book.namXuatBan" class="text-caption">
         {{ book.namXuatBan }}
@@ -66,8 +51,24 @@
         </v-chip>
       </div>
       
+      <div class="d-flex align-center mb-2">
+        <v-icon 
+          size="small" 
+          :color="book.soLuong > 0 ? 'success' : 'error'" 
+          class="mr-1"
+        >
+          {{ book.soLuong > 0 ? 'mdi-check-circle' : 'mdi-alert-circle' }}
+        </v-icon>
+        <span 
+          class="text-caption" 
+          :class="{ 'text-success': book.soLuong > 0, 'text-error': book.soLuong <= 0 }"
+        >
+          {{ book.soLuong > 0 ? `Còn ${book.soLuong} cuốn` : 'Hết sách' }}
+        </span>
+      </div>
+      
       <p class="text-caption text-truncate" v-if="book.moTa">
-        {{ book.moTa }}
+        {{ cleanDescription(book.moTa) }}
       </p>
     </v-card-text>
     
@@ -122,7 +123,7 @@ export default {
     getImageUrl(url) {
       if (!url || this.imageError) {
         console.log('Sử dụng ảnh placeholder do không có URL hoặc có lỗi');
-        return '/placeholder-book.jpg';
+        return 'https://via.placeholder.com/300x400/e0e0e0/666666?text=No+Image';
       }
       
       // Nếu đã là URL https (Cloudinary), sử dụng trực tiếp
@@ -154,8 +155,19 @@ export default {
       console.warn(`Failed to load image for book: ${this.book.tuaSach}`);
       
       if (event && event.target) {
-        event.target.src = '/placeholder-book.jpg';
+        event.target.src = "https://via.placeholder.com/300x400/e0e0e0/666666?text=No+Image";
       }
+    },
+
+    cleanDescription(description) {
+      if (!description) return '';
+      
+      // Loại bỏ các ký tự định dạng và giữ lại văn bản thuần túy
+      return description
+        .replace(/\*\*/g, '') // Loại bỏ dấu in đậm
+        .replace(/\*/g, '')   // Loại bỏ dấu in nghiêng
+        .replace(/\\_/g, '')  // Loại bỏ dấu gạch dưới
+        .replace(/\\n/g, ' '); // Thay thế xuống dòng bằng khoảng trắng
     }
   }
 };
@@ -166,24 +178,9 @@ export default {
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.book-card:hover:not(.sold-out) {
+.book-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1) !important;
-}
-
-.sold-out {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.sold-out-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
-  z-index: 1;
 }
 
 .book-card-image-container {

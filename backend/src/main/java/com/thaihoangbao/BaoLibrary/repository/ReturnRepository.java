@@ -33,4 +33,15 @@ public interface ReturnRepository extends JpaRepository<Return, Integer> {
     // Count returns by a specific user for statistical purposes
     @Query("SELECT COUNT(r) FROM Return r JOIN r.loanDetail ld JOIN ld.loan l WHERE l.user.userId = :userId")
     long countReturnsByUser(@Param("userId") Integer userId);
+    
+    // Count returns in a date range
+    long countByReturnDateBetween(Date startDate, Date endDate);
+    
+    // Count on-time returns (no late fee)
+    @Query("SELECT COUNT(r) FROM Return r WHERE r.lateFee = 0 OR r.lateFee IS NULL")
+    long countOnTimeReturns();
+    
+    // Count on-time returns for a specific user
+    @Query("SELECT COUNT(r) FROM Return r JOIN r.loanDetail ld JOIN ld.loan l WHERE l.user.userId = :userId AND (r.lateFee = 0 OR r.lateFee IS NULL)")
+    long countOnTimeReturnsByUser(@Param("userId") Integer userId);
 }

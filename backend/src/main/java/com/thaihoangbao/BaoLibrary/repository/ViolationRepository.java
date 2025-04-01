@@ -1,5 +1,6 @@
 package com.thaihoangbao.BaoLibrary.repository;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -36,4 +37,15 @@ public interface ViolationRepository extends JpaRepository<Violation, Integer> {
     // Find total fine amount for a user
     @Query("SELECT SUM(v.fineAmount) FROM Violation v JOIN v.loanDetail ld JOIN ld.loan l WHERE l.user.userId = :userId AND v.status = :status")
     Double getTotalFineAmountByUserIdAndStatus(@Param("userId") Integer userId, @Param("status") String status);
+    
+    // Find total unpaid fines by user ID
+    @Query("SELECT SUM(v.fineAmount) FROM Violation v JOIN v.loanDetail ld JOIN ld.loan l WHERE l.user.userId = :userId AND v.status = 'pending'")
+    BigDecimal findTotalUnpaidFinesByUserId(@Param("userId") Integer userId);
+    
+    // Count violations in a date range
+    long countByViolationDateBetween(Date startDate, Date endDate);
+    
+    // Sum of paid fines in a date range
+    @Query("SELECT SUM(v.fineAmount) FROM Violation v WHERE v.status = 'paid' AND v.violationDate BETWEEN :startDate AND :endDate")
+    BigDecimal sumPaidFinesByDateRange(@Param("startDate") Date startDate, @Param("endDate") Date endDate);
 }

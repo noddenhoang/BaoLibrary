@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trình soạn thảo văn bản</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Hệ thống quản lý nội dung</h1>
+        
+        <div class="section">
+            <h2>Xem nội dung hiện tại</h2>
+            <div id="content-display" class="content-area"></div>
+        </div>
+        
+        <div class="section">
+            <h2>Soạn thảo nội dung mới</h2>
+            <div class="editor-tools">
+                <button id="bold-btn" title="In đậm">B</button>
+                <button id="italic-btn" title="In nghiêng"><i>I</i></button>
+                <button id="line-break-btn" title="Xuống dòng">↵</button>
+            </div>
+            <div id="editor" class="content-area" contenteditable="true"></div>
+            
+            <div class="actions">
+                <button id="save-btn">Lưu nội dung</button>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Kết quả định dạng</h2>
+            <textarea id="formatted-output" readonly></textarea>
+            <div class="format-guide">
+                <p><strong>Hướng dẫn định dạng:</strong></p>
+                <ul>
+                    <li><strong>In đậm:</strong> **văn bản** hoặc ****văn bản****</li>
+                    <li><em>In nghiêng:</em> *văn bản* hoặc _văn bản_</li>
+                    <li><strong>Xuống dòng:</strong> \n</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html> 

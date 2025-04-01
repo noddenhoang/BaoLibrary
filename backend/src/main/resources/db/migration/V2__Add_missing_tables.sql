@@ -1,0 +1,20 @@
+-- Add description field to VIOLATION table
+ALTER TABLE VIOLATION ADD COLUMN MoTa TEXT;
+
+-- Add status field to VIOLATION if not exist
+ALTER TABLE VIOLATION MODIFY COLUMN TrangThai VARCHAR(50) DEFAULT 'pending';
+
+-- Create INCIDENT table
+CREATE TABLE IF NOT EXISTS INCIDENT (
+    IncidentID INT AUTO_INCREMENT PRIMARY KEY,
+    UserID INT NOT NULL,
+    Title VARCHAR(255) NOT NULL,
+    Content TEXT NOT NULL,
+    BookID INT,
+    ReportDate DATE NOT NULL,
+    Status VARCHAR(50) DEFAULT 'pending',
+    ResolvedDate DATE,
+    Resolution TEXT,
+    FOREIGN KEY (UserID) REFERENCES USER(UserID) ON DELETE CASCADE,
+    FOREIGN KEY (BookID) REFERENCES BOOK(BookID) ON DELETE SET NULL
+); 

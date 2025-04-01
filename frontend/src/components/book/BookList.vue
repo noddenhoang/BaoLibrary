@@ -15,7 +15,7 @@
                   :src="book.hinhAnhSach || '/placeholder-book.png'"
                   :alt="book.tuaSach"
                   cover
-                  @error="handleImageError(book)"
+                  @error="handleImageError(book, $event)"
                 ></v-img>
               </v-avatar>
             </template>
@@ -101,9 +101,11 @@ export default {
       // TODO: Implement favorite functionality in later increment
     },
     // Handle image loading errors
-    handleImageError(book) {
+    handleImageError(book, event) {
       console.warn(`Failed to load image for book: ${book.tuaSach}`);
-      event.target.src = '/placeholder-book.jpg';
+      if (event && event.target) {
+        event.target.src = 'https://via.placeholder.com/300x400/e0e0e0/666666?text=No+Image';
+      }
     }
   }
 };

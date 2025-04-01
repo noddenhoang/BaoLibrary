@@ -1,7 +1,8 @@
 package com.thaihoangbao.BaoLibrary.dto;
 
-import lombok.Data;
 import java.util.List;
+
+import lombok.Data;
 
 @Data
 public class BookResponseDto {
@@ -13,4 +14,5 @@ public class BookResponseDto {
     private Integer soLuong;
     private List<AuthorDto> authors;
     private List<CategoryDto> categories;
+    private List<InventoryDto> inventories;
 }

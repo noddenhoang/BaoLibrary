@@ -17,31 +17,41 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "INCIDENTREPORT")
+@Table(name = "INCIDENT")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class Incident {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ReportID")
-    private Integer reportId;
+    @Column(name = "IncidentID")
+    private Integer incidentId;
     
     @ManyToOne
     @JoinColumn(name = "UserID")
     private User user;
     
-    @ManyToOne
-    @JoinColumn(name = "BranchID")
-    private Branch branch;
+    @Column(name = "Title")
+    private String title;
     
-    @Column(name = "NgayBaoCao")
+    @Column(name = "Content")
+    private String content;
+    
+    @ManyToOne
+    @JoinColumn(name = "BookID")
+    private Book book;
+    
+    @Column(name = "ReportDate")
     @Temporal(TemporalType.DATE)
     private Date reportDate;
     
-    @Column(name = "NoiDung")
-    private String content;
-    
-    @Column(name = "TrangThai")
+    @Column(name = "Status")
     private String status; // "pending", "in_progress", "resolved", "rejected"
+    
+    @Column(name = "ResolvedDate")
+    @Temporal(TemporalType.DATE)
+    private Date resolvedDate;
+    
+    @Column(name = "Resolution")
+    private String resolution;
 }

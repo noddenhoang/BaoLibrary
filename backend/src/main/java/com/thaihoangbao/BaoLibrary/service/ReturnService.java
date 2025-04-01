@@ -43,4 +43,24 @@ public interface ReturnService {
      * Verify if all books in a loan have been returned
      */
     boolean areAllBooksInLoanReturned(Integer loanId);
+    
+    /**
+     * Count returns processed in a date range
+     */
+    long countReturnsByDateRange(Date startDate, Date endDate);
+    
+    /**
+     * Get overall on-time return rate
+     */
+    double getOnTimeReturnRateOverall();
+    
+    /**
+     * Count violations created in a date range
+     */
+    long countViolationsByDateRange(Date startDate, Date endDate);
+    
+    /**
+     * Get total fines collected in a date range
+     */
+    BigDecimal getTotalFinesByDateRange(Date startDate, Date endDate);
 }

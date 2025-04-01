@@ -1,0 +1,135 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #f5f5f5;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #333;
+}
+
+.section {
+    margin-bottom: 30px;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 6px;
+}
+
+h2 {
+    margin-bottom: 15px;
+    font-size: 1.4rem;
+    color: #444;
+}
+
+.content-area {
+    min-height: 200px;
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 4px;
+    background-color: white;
+    line-height: 1.6;
+    overflow-y: auto;
+}
+
+#editor {
+    margin-top: 10px;
+}
+
+.editor-tools {
+    margin-bottom: 10px;
+    display: flex;
+    gap: 10px;
+}
+
+.editor-tools button {
+    padding: 5px 10px;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    min-width: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.editor-tools button:hover {
+    background-color: #e0e0e0;
+}
+
+.actions {
+    margin-top: 15px;
+    text-align: right;
+}
+
+#save-btn {
+    padding: 8px 20px;
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+#save-btn:hover {
+    background-color: #0d8aee;
+}
+
+#formatted-output {
+    width: 100%;
+    min-height: 150px;
+    padding: 10px;
+    font-family: monospace;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f5f5f5;
+    resize: vertical;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+.format-guide {
+    margin-top: 15px;
+    padding: 15px;
+    background-color: #f0f7ff;
+    border: 1px solid #d0e3ff;
+    border-radius: 4px;
+}
+
+.format-guide p {
+    margin-bottom: 10px;
+}
+
+.format-guide ul {
+    padding-left: 20px;
+}
+
+.format-guide li {
+    margin-bottom: 5px;
+}
+
+#italic-btn i {
+    font-style: italic;
+    font-weight: normal;
+} 

@@ -330,4 +330,38 @@ public class ReturnServiceImpl implements ReturnService {
         // Check if all books are returned
         return loanDetails.stream().allMatch(detail -> detail.getReturnDate() != null);
     }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public long countReturnsByDateRange(Date startDate, Date endDate) {
+        return returnRepository.countByReturnDateBetween(startDate, endDate);
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public double getOnTimeReturnRateOverall() {
+        long totalReturns = returnRepository.count();
+        if (totalReturns == 0) {
+            return 0.0;
+        }
+        
+        // Đếm số lần trả đúng hạn (không có vi phạm)
+        long onTimeReturns = returnRepository.countOnTimeReturns();
+        
+        return (double) onTimeReturns / totalReturns;
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public long countViolationsByDateRange(Date startDate, Date endDate) {
+        return violationRepository.countByViolationDateBetween(startDate, endDate);
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public BigDecimal getTotalFinesByDateRange(Date startDate, Date endDate) {
+        // Lấy tổng số tiền phạt đã thu trong khoảng thời gian
+        BigDecimal totalFines = violationRepository.sumPaidFinesByDateRange(startDate, endDate);
+        return totalFines != null ? totalFines : BigDecimal.ZERO;
+    }
 }

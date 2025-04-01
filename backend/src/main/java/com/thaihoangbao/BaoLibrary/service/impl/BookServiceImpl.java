@@ -1,14 +1,10 @@
 package com.thaihoangbao.BaoLibrary.service.impl;
 
-import com.thaihoangbao.BaoLibrary.dto.*;
-import com.thaihoangbao.BaoLibrary.entity.Author;
-import com.thaihoangbao.BaoLibrary.entity.Book;
-import com.thaihoangbao.BaoLibrary.entity.Category;
-import com.thaihoangbao.BaoLibrary.exception.ResourceNotFoundException;
-import com.thaihoangbao.BaoLibrary.repository.AuthorRepository;
-import com.thaihoangbao.BaoLibrary.repository.BookRepository;
-import com.thaihoangbao.BaoLibrary.repository.CategoryRepository;
-import com.thaihoangbao.BaoLibrary.service.BookService;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,10 +13,24 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import com.thaihoangbao.BaoLibrary.dto.AuthorDto;
+import com.thaihoangbao.BaoLibrary.dto.BookDto;
+import com.thaihoangbao.BaoLibrary.dto.BookResponseDto;
+import com.thaihoangbao.BaoLibrary.dto.CategoryDto;
+import com.thaihoangbao.BaoLibrary.dto.InventoryDto;
+import com.thaihoangbao.BaoLibrary.dto.PagedResponse;
+import com.thaihoangbao.BaoLibrary.entity.Author;
+import com.thaihoangbao.BaoLibrary.entity.Book;
+import com.thaihoangbao.BaoLibrary.entity.Branch;
+import com.thaihoangbao.BaoLibrary.entity.Category;
+import com.thaihoangbao.BaoLibrary.entity.Inventory;
+import com.thaihoangbao.BaoLibrary.exception.ResourceNotFoundException;
+import com.thaihoangbao.BaoLibrary.repository.AuthorRepository;
+import com.thaihoangbao.BaoLibrary.repository.BookRepository;
+import com.thaihoangbao.BaoLibrary.repository.BranchRepository;
+import com.thaihoangbao.BaoLibrary.repository.CategoryRepository;
+import com.thaihoangbao.BaoLibrary.repository.InventoryRepository;
+import com.thaihoangbao.BaoLibrary.service.BookService;
 
 @Service
 public class BookServiceImpl implements BookService {
@@ -34,16 +44,22 @@ public class BookServiceImpl implements BookService {
     @Autowired
     private CategoryRepository categoryRepository;
 
+    @Autowired
+    private InventoryRepository inventoryRepository;
+
+    @Autowired
+    private BranchRepository branchRepository;
+
     @Override
     @Transactional
     public BookResponseDto createBook(BookDto bookDto) {
-        // Tạo book entity từ DTO
+        // Tạo mới sách
         Book book = new Book();
         book.setTuaSach(bookDto.getTuaSach());
         book.setMoTa(bookDto.getMoTa());
         book.setNamXuatBan(bookDto.getNamXuatBan());
         book.setHinhAnhSach(bookDto.getHinhAnhSach());
-        book.setSoLuong(bookDto.getSoLuong()); // Thêm dòng này
+        book.setSoLuong(bookDto.getSoLuong());
         
         // Thêm tác giả
         Set<Author> authors = new HashSet<>();
@@ -69,6 +85,14 @@ public class BookServiceImpl implements BookService {
         
         // Lưu sách vào cơ sở dữ liệu
         Book savedBook = bookRepository.save(book);
+        
+        // Nếu có dữ liệu số lượng theo chi nhánh, cập nhật inventory
+        if (bookDto.getInventories() != null && !bookDto.getInventories().isEmpty()) {
+            updateInventories(savedBook.getBookId(), bookDto.getInventories());
+        } else {
+            // Nếu không có dữ liệu theo chi nhánh, phân bổ đồng đều cho các chi nhánh
+            // Lưu ý: Cơ sở dữ liệu có trigger sẽ tự động xử lý phân bổ
+        }
         
         // Chuyển đổi Entity thành DTO để trả về
         return convertToBookResponseDto(savedBook);
@@ -187,7 +211,7 @@ public class BookServiceImpl implements BookService {
         book.setMoTa(bookDto.getMoTa());
         book.setNamXuatBan(bookDto.getNamXuatBan());
         book.setHinhAnhSach(bookDto.getHinhAnhSach());
-        book.setSoLuong(bookDto.getSoLuong()); // Thêm dòng này
+        book.setSoLuong(bookDto.getSoLuong());
         
         // Cập nhật tác giả
         if (bookDto.getAuthorIds() != null) {
@@ -214,6 +238,11 @@ public class BookServiceImpl implements BookService {
         // Lưu thay đổi
         Book updatedBook = bookRepository.save(book);
         
+        // Nếu có dữ liệu số lượng theo chi nhánh, cập nhật inventory
+        if (bookDto.getInventories() != null && !bookDto.getInventories().isEmpty()) {
+            updateInventories(updatedBook.getBookId(), bookDto.getInventories());
+        }
+        
         return convertToBookResponseDto(updatedBook);
     }
 
@@ -234,7 +263,7 @@ public class BookServiceImpl implements BookService {
         dto.setMoTa(book.getMoTa());
         dto.setNamXuatBan(book.getNamXuatBan());
         dto.setHinhAnhSach(book.getHinhAnhSach());
-        dto.setSoLuong(book.getSoLuong()); // Thêm dòng này
+        dto.setSoLuong(book.getSoLuong());
         
         // Chuyển đổi tác giả
         List<AuthorDto> authorDtos = book.getAuthors().stream()
@@ -259,6 +288,77 @@ public class BookServiceImpl implements BookService {
             .collect(Collectors.toList());
         dto.setCategories(categoryDtos);
         
+        // Thêm thông tin số lượng sách theo chi nhánh
+        List<InventoryDto> inventoryDtos = inventoryRepository.findByBookBookId(book.getBookId())
+            .stream()
+            .map(inventory -> {
+                InventoryDto inventoryDto = new InventoryDto();
+                inventoryDto.setBookId(inventory.getBook().getBookId());
+                inventoryDto.setBranchId(inventory.getBranch().getBranchId());
+                inventoryDto.setTenChiNhanh(inventory.getBranch().getTenChiNhanh());
+                inventoryDto.setTongSoBan(inventory.getTotalCopies());
+                inventoryDto.setSoLuongHienCo(inventory.getAvailableCopies());
+                return inventoryDto;
+            })
+            .collect(Collectors.toList());
+        dto.setInventories(inventoryDtos);
+        
         return dto;
+    }
+
+    /**
+     * Cập nhật thông tin số lượng sách theo chi nhánh
+     * @param bookId ID của sách
+     * @param inventories Danh sách thông tin số lượng theo chi nhánh
+     */
+    private void updateInventories(Integer bookId, List<InventoryDto> inventories) {
+        Book book = bookRepository.findById(bookId)
+            .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sách với ID: " + bookId));
+        
+        for (InventoryDto inventoryDto : inventories) {
+            // Đảm bảo bookId đúng
+            inventoryDto.setBookId(bookId);
+            
+            Branch branch = branchRepository.findById(inventoryDto.getBranchId())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy chi nhánh với ID: " + inventoryDto.getBranchId()));
+            
+            // Tìm inventory tương ứng hoặc tạo mới
+            Inventory inventory = inventoryRepository.findByBookBookIdAndBranchBranchId(bookId, inventoryDto.getBranchId())
+                .orElse(new Inventory());
+            
+            if (inventory.getId() == null) {
+                inventory.setId(new Inventory.InventoryId(inventoryDto.getBranchId(), bookId));
+                inventory.setBook(book);
+                inventory.setBranch(branch);
+            }
+            
+            // Cập nhật số lượng
+            inventory.setTotalCopies(inventoryDto.getTongSoBan());
+            inventory.setAvailableCopies(inventoryDto.getSoLuongHienCo());
+            
+            inventoryRepository.save(inventory);
+        }
+        
+        // Cập nhật tổng số lượng sách
+        updateTotalBookQuantity(bookId);
+    }
+
+    /**
+     * Cập nhật tổng số lượng sách trong bảng Book
+     * @param bookId ID của sách
+     */
+    private void updateTotalBookQuantity(Integer bookId) {
+        Book book = bookRepository.findById(bookId)
+            .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sách với ID: " + bookId));
+        
+        // Tính tổng số lượng từ tất cả các chi nhánh
+        Integer totalQuantity = inventoryRepository.findByBookBookId(bookId)
+            .stream()
+            .mapToInt(Inventory::getAvailableCopies)
+            .sum();
+        
+        // Cập nhật số lượng sách
+        book.setSoLuong(totalQuantity);
+        bookRepository.save(book);
     }
 }

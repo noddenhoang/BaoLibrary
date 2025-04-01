@@ -97,6 +97,24 @@ const apiService = {
     delete: (id) => apiClient.delete(`/categories/${id}`)
   },
 
+  // Branches API
+  branches: {
+    getAll: () => apiClient.get('/branches'),
+    getById: (id) => apiClient.get(`/branches/${id}`),
+    create: (branchData) => apiClient.post('/branches', branchData),
+    update: (id, branchData) => apiClient.put(`/branches/${id}`, branchData),
+    delete: (id) => apiClient.delete(`/branches/${id}`)
+  },
+  
+  // Inventory API
+  inventory: {
+    getByBookId: (bookId) => apiClient.get(`/inventories/book/${bookId}`),
+    getByBookAndBranch: (bookId, branchId) => apiClient.get(`/inventories/book/${bookId}/branch/${branchId}`),
+    update: (inventoryData) => apiClient.put('/inventories/update', inventoryData),
+    updateAll: (bookId, inventoryList) => apiClient.put(`/inventories/book/${bookId}/update-all`, inventoryList),
+    checkAvailability: (bookId, branchId) => apiClient.get(`/inventories/check/${bookId}/${branchId}`)
+  },
+
   // Files service
   files: {
     upload: (formData) => {
